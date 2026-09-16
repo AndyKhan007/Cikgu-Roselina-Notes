@@ -1,6 +1,6 @@
 // =====================================================
 // Animasi lampu trafik + mobil kecil di navbar
-// Versi 3 — force animate (abaikan reduce motion)
+// Versi 4 — mobile-friendly, tanpa reduce-motion blocker
 // =====================================================
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
@@ -11,9 +11,6 @@ export function startLogoAnimation() {
   const logo  = document.getElementById('logoTraffic');
 
   if (!track || !car || !logo) return;
-
-  // Lewati hanya kalau layar kecil (agar tidak mengganggu di HP)
-  if (window.matchMedia('(max-width: 640px)').matches) return;
 
   const lights = {
     red:    logo.querySelector('.tl-red'),
@@ -41,9 +38,15 @@ export function startLogoAnimation() {
       return loop();
     }
 
-    const stopX  = (logoRect.right - trackRect.left) + 10;
-    const startX = trackRect.width + 40;
-    const exitX  = -80;
+    // Lebar mobil mengikuti CSS (.cute-car)
+    const carWidth = car.offsetWidth || 44;
+
+    // Mobil berhenti tepat 8px di kanan logo
+    const stopX  = (logoRect.right - trackRect.left) + 8;
+    // Mulai dari luar kanan
+    const startX = trackRect.width + carWidth + 20;
+    // Keluar ke kiri
+    const exitX  = -(carWidth + 20);
 
     // Reset posisi
     car.style.transition = 'none';
@@ -53,8 +56,11 @@ export function startLogoAnimation() {
 
     await wait(50);
 
+    // Durasi jalan: sedikit lebih cepat di mobile
+    const isMobile  = window.matchMedia('(max-width: 640px)').matches;
+    const driveTime = isMobile ? 1.8 : 2.4;
+
     // FASE 1: jalan
-    const driveTime = 2.4;
     car.style.transition = `transform ${driveTime}s cubic-bezier(0.25, 0.1, 0.4, 1)`;
     car.style.transform  = `translateX(${stopX}px)`;
 
@@ -68,18 +74,17 @@ export function startLogoAnimation() {
 
     // FASE 4: berhenti
     await wait(driveTime * 1000 * 0.40);
-
     await wait(1500);
 
     // FASE 5: hijau lagi
     setLight('green');
     await wait(280);
 
-    // FASE 6: lanjut
-    car.style.transition = 'transform 1.4s cubic-bezier(0.4, 0, 0.7, 1)';
+    // FASE 6: lanjut ke kiri
+    car.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.7, 1)';
     car.style.transform  = `translateX(${exitX}px)`;
 
-    await wait(1500);
+    await wait(1300);
     car.style.opacity = '0';
 
     await wait(1800);

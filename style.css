@@ -83,7 +83,7 @@ html, body { font-family: 'Roboto', sans-serif; }
 .tl-light {
   transition: fill 0.25s ease, filter 0.25s ease;
 }
-.tl-red    { fill: #3a1a1a; }   /* off */
+.tl-red    { fill: #3a1a1a; }
 .tl-yellow { fill: #3a3a1a; }
 .tl-green  { fill: #1a3a1a; }
 
@@ -109,7 +109,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   z-index: 5;
 }
 
-/* --- Mobil kecil --- */
+/* --- Mobil kecil (ukuran default desktop) --- */
 .cute-car {
   position: absolute;
   bottom: 4px;
@@ -120,13 +120,11 @@ html, body { font-family: 'Roboto', sans-serif; }
   will-change: transform, opacity;
 }
 
-/* --- Layar kecil: sembunyikan animasi --- */
+/* --- Mobile: mobil lebih kecil --- */
 @media (max-width: 640px) {
-  .car-track { display: none; }
-}
-
-/* --- Reduced motion --- */
-@media (prefers-reduced-motion: reduce) {
-  .car-track { display: none; }
-  .tl-light  { transition: none; }
+  .cute-car {
+    width: 32px;
+    height: 16px;
+    bottom: 3px;
+  }
 }
