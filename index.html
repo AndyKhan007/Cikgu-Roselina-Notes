@@ -44,11 +44,50 @@
   <div id="app" class="hidden min-h-screen flex flex-col">
 
     <!-- HEADER -->
-    <header class="bg-milk border-b border-road/10 sticky top-0 z-30">
-      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+    <header class="bg-milk border-b border-road/10 sticky top-0 z-30 overflow-hidden relative">
+
+      <!-- Lapisan animasi mobil -->
+      <div id="carTrack" class="car-track" aria-hidden="true">
+        <div id="cuteCar" class="cute-car">
+          <svg viewBox="0 0 70 34" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+            <!-- shadow -->
+            <ellipse cx="35" cy="31" rx="28" ry="2" fill="rgba(43,43,43,0.15)"/>
+            <!-- body bawah -->
+            <rect x="4" y="16" width="62" height="12" rx="4" fill="#D7263D"/>
+            <!-- atap -->
+            <path d="M18 16 L24 8 Q26 6 30 6 L44 6 Q48 6 50 8 L56 16 Z" fill="#D7263D"/>
+            <!-- jendela depan -->
+            <path d="M22 15 L26 9 Q27 8 29 8 L35 8 L35 15 Z" fill="#7FD6E6" opacity="0.95"/>
+            <!-- jendela belakang -->
+            <path d="M37 15 L37 8 L43 8 Q45 8 46 9 L50 15 Z" fill="#7FD6E6" opacity="0.95"/>
+            <!-- garis pintu -->
+            <line x1="36" y1="16" x2="36" y2="27" stroke="#A01830" stroke-width="0.5"/>
+            <!-- lampu depan (kiri = arah gerak) -->
+            <circle cx="6" cy="22" r="2" fill="#FFF8DC"/>
+            <!-- lampu belakang -->
+            <circle cx="64" cy="22" r="1.4" fill="#FFB3B3"/>
+            <!-- roda -->
+            <circle cx="17" cy="28" r="5" fill="#1a1a1a"/>
+            <circle cx="17" cy="28" r="2" fill="#9CA3AF"/>
+            <circle cx="53" cy="28" r="5" fill="#1a1a1a"/>
+            <circle cx="53" cy="28" r="2" fill="#9CA3AF"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Konten header -->
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between relative z-10">
+
+        <!-- LOGO + LAMPU TRAFIK -->
         <a href="#/" class="flex items-center gap-2">
-          <div class="w-9 h-9 rounded-full bg-road flex items-center justify-center">
-            <span class="text-warnYellow text-lg">🚦</span>
+          <div class="w-9 h-9 flex items-center justify-center" id="logoTraffic" aria-label="Lampu lalu lintas">
+            <svg viewBox="0 0 26 50" class="w-7 h-9">
+              <rect x="3" y="1" width="20" height="48" rx="6" fill="#2B2B2B"/>
+              <rect x="3" y="1" width="20" height="48" rx="6" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+              <circle class="tl-light tl-red"    cx="13" cy="11" r="4.2" />
+              <circle class="tl-light tl-yellow" cx="13" cy="25" r="4.2" />
+              <circle class="tl-light tl-green"  cx="13" cy="39" r="4.2" />
+            </svg>
           </div>
           <div class="leading-tight">
             <p class="font-bold text-sm">Cikgu Roselina</p>

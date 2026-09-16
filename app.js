@@ -2,6 +2,7 @@ import { CONFIG } from './config.js';
 import { initAuth, getUser, isLoggedIn } from './auth.js';
 import { registerRoute, startRouter, navigate } from './router.js';
 import { el, toast, playLoadingAnimation } from './ui.js';
+import { startLogoAnimation } from './logo-animation.js';
 
 // ===================== ROUTES =====================
 
@@ -105,15 +106,14 @@ async function boot() {
 
   // 3. Init auth
   initAuth(() => {
-    // re-render rute saat login/logout
     navigate();
   });
 
   // 4. Start router
   startRouter();
 
-  // 5. Ping server (opsional, untuk cek koneksi)
-  // import('./api.js').then(({ API }) => API.ping().catch(() => {}));
+  // 5. Mulai animasi lampu + mobil kecil
+  startLogoAnimation();
 }
 
 boot();

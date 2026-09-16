@@ -75,8 +75,58 @@ html, body { font-family: 'Roboto', sans-serif; }
 #toast.show { display: block; animation: toastIn .25s ease; }
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
-/* ====== Reduced motion ====== */
+/* =====================================================
+   LAMPU TRAFIK + ANIMASI MOBIL KECIL
+   ===================================================== */
+
+/* --- Lampu trafik --- */
+.tl-light {
+  transition: fill 0.25s ease, filter 0.25s ease;
+}
+.tl-red    { fill: #3a1a1a; }   /* off */
+.tl-yellow { fill: #3a3a1a; }
+.tl-green  { fill: #1a3a1a; }
+
+.tl-red.active {
+  fill: #ff3b30;
+  filter: drop-shadow(0 0 4px #ff3b30) drop-shadow(0 0 10px #ff3b30);
+}
+.tl-yellow.active {
+  fill: #ffcc00;
+  filter: drop-shadow(0 0 4px #ffcc00) drop-shadow(0 0 10px #ffcc00);
+}
+.tl-green.active {
+  fill: #34d058;
+  filter: drop-shadow(0 0 4px #34d058) drop-shadow(0 0 10px #34d058);
+}
+
+/* --- Jalur mobil --- */
+.car-track {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 5;
+}
+
+/* --- Mobil kecil --- */
+.cute-car {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+  width: 44px;
+  height: 22px;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* --- Layar kecil: sembunyikan animasi --- */
+@media (max-width: 640px) {
+  .car-track { display: none; }
+}
+
+/* --- Reduced motion --- */
 @media (prefers-reduced-motion: reduce) {
-  .sign-fade-in, .sign-fade-out, #toast.show { animation: none; }
-  .menu-card:hover { transform: none; }
+  .car-track { display: none; }
+  .tl-light  { transition: none; }
 }
