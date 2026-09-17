@@ -158,8 +158,8 @@ registerRoute('#/notes', (_, view) => {
             const { API } = await import('./api.js');
             await API.deleteNote(id);
             toast('Catatan dihapus');
-            const notes = await API.listNotes();
-            renderList(notes);
+            // Refresh halaman: navigate() akan re-run route #/notes dan fetch data fresh
+            navigate();
           } catch (err) {
             toast('Gagal menghapus: ' + err.message);
           }
@@ -620,7 +620,10 @@ registerRoute('#/notes/:id', (params, view) => {
           const { API } = await import('./api.js');
           await API.deleteNote(n.id);
           toast('Catatan dihapus');
+          // Pindah ke daftar catatan (hash berubah → navigate otomatis)
           location.hash = '#/notes';
+          // Force navigate kalau hash sudah #/notes (edge case)
+          setTimeout(() => navigate(), 50);
         } catch (err) {
           toast('Gagal menghapus: ' + err.message);
         }
@@ -733,6 +736,7 @@ registerRoute('#/notes/:id/edit', (params, view) => {
           await API.deleteNote(n.id);
           toast('Catatan dihapus');
           location.hash = '#/notes';
+          setTimeout(() => navigate(), 50);
         } catch (err) {
           toast('Gagal menghapus: ' + err.message);
         }
