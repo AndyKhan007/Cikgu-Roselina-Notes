@@ -61,6 +61,7 @@ registerRoute('#/notes/new', (_, view) => {
         <p class="text-sm text-road/60 mt-1">Rekam suara Anda, lalu transkripsi otomatis ke teks.</p>
       </div>
 
+      <!-- ============ PANEL REKAMAN UTAMA ============ -->
       <div id="rec-status" class="bg-milk border border-road/10 rounded-2xl p-6 text-center mb-4">
         <div id="rec-visual" class="text-5xl mb-3">🎙️</div>
         <div id="rec-timer" class="text-2xl font-bold tabular-nums text-road/40">00:00</div>
@@ -74,20 +75,24 @@ registerRoute('#/notes/new', (_, view) => {
         <button id="btn-stop" class="btn btn-ghost hidden">
           <span>⏹️</span><span>Stop</span>
         </button>
-        <button id="btn-cancel" class="btn btn-ghost hidden">
-          <span>✖️</span><span>Batal</span>
+        <button id="btn-cancel-rec" class="btn btn-ghost hidden">
+          <span>✖️</span><span>Batalkan Rekaman</span>
         </button>
         <button id="btn-transcribe" class="btn btn-cyan hidden">
           <span>✨</span><span>Proses Transkripsi</span>
         </button>
       </div>
 
+      <!-- ============ EDITOR ============ -->
       <div id="editor-area" class="hidden">
         <label class="block text-sm font-medium mb-1">Judul catatan</label>
         <input id="note-title" type="text" placeholder="Contoh: Teknik parkir paralel"
           class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
 
-        <label class="block text-sm font-medium mb-1">Isi catatan</label>
+        <label class="block text-sm font-medium mb-1">
+          Isi catatan
+          <span class="text-xs text-road/40 font-normal">(letakkan kursor di posisi yang diinginkan, lalu klik "Tambah Rekam")</span>
+        </label>
         <textarea id="note-text" rows="10" placeholder="Hasil transkripsi akan muncul di sini, bisa diedit..."
           class="w-full px-4 py-3 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow font-roboto text-sm leading-relaxed"></textarea>
 
@@ -95,39 +100,102 @@ registerRoute('#/notes/new', (_, view) => {
           <button id="btn-save" class="btn btn-primary">
             <span>💾</span><span>Simpan Catatan</span>
           </button>
+          <button id="btn-append" class="btn btn-cyan">
+            <span>🎙️</span><span>Tambah Rekam</span>
+          </button>
           <button id="btn-reset" class="btn btn-ghost">
-            <span>🔄</span><span>Rekam Ulang</span>
+            <span>✖️</span><span>Batal</span>
           </button>
         </div>
       </div>
 
       <div id="rec-error" class="hidden mt-4 p-4 rounded-xl bg-stopRed/10 border border-stopRed/30 text-sm text-stopRed"></div>
 
+      <!-- ============ MODAL TAMBAH REKAM ============ -->
+      <div id="append-modal" class="hidden fixed inset-0 z-50 bg-road/50 flex items-center justify-center p-4">
+        <div class="bg-milk rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-road/10">
+
+          <h3 class="font-bold text-lg mb-1">Tambah Rekam</h3>
+          <p class="text-xs text-road/60 mb-4">Hasil akan disisipkan pada posisi kursor</p>
+
+          <div class="bg-white border border-road/10 rounded-xl p-4 mb-4">
+            <div id="app-rec-visual" class="text-4xl mb-2">🎙️</div>
+            <div id="app-rec-timer" class="text-xl font-bold tabular-nums text-road/40">00:00</div>
+            <div id="app-rec-hint" class="text-xs text-road/50 mt-1">Siap merekam</div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 justify-center">
+            <button id="app-btn-record" class="btn btn-primary">
+              <span>🎙️</span><span>Mulai</span>
+            </button>
+            <button id="app-btn-stop" class="btn btn-ghost hidden">
+              <span>⏹️</span><span>Stop</span>
+            </button>
+            <button id="app-btn-transcribe" class="btn btn-cyan hidden">
+              <span>✨</span><span>Sisipkan</span>
+            </button>
+            <button id="app-btn-close" class="btn btn-ghost">
+              <span>✖️</span><span>Tutup</span>
+            </button>
+          </div>
+
+          <div id="app-rec-error" class="hidden mt-3 text-xs text-stopRed"></div>
+        </div>
+      </div>
+
     </div>
   `));
 
   // =====================================================
-  // LOGIC
+  // ELEMEN
   // =====================================================
+  // Panel rekaman utama
   const btnRecord     = view.querySelector('#btn-record');
   const btnStop       = view.querySelector('#btn-stop');
-  const btnCancel     = view.querySelector('#btn-cancel');
+  const btnCancelRec  = view.querySelector('#btn-cancel-rec');
   const btnTranscribe = view.querySelector('#btn-transcribe');
-  const btnSave       = view.querySelector('#btn-save');
-  const btnReset      = view.querySelector('#btn-reset');
   const timerEl       = view.querySelector('#rec-timer');
   const visualEl      = view.querySelector('#rec-visual');
   const hintEl        = view.querySelector('#rec-hint');
+
+  // Editor
   const editorArea    = view.querySelector('#editor-area');
+  const btnSave       = view.querySelector('#btn-save');
+  const btnAppend     = view.querySelector('#btn-append');
+  const btnReset      = view.querySelector('#btn-reset');
   const titleInput    = view.querySelector('#note-title');
   const textInput     = view.querySelector('#note-text');
+
+  // Error box
   const errorBox      = view.querySelector('#rec-error');
 
+  // Modal tambah rekam
+  const modal         = view.querySelector('#append-modal');
+  const appBtnRecord  = view.querySelector('#app-btn-record');
+  const appBtnStop    = view.querySelector('#app-btn-stop');
+  const appBtnTrans   = view.querySelector('#app-btn-transcribe');
+  const appBtnClose   = view.querySelector('#app-btn-close');
+  const appTimerEl    = view.querySelector('#app-rec-timer');
+  const appVisualEl   = view.querySelector('#app-rec-visual');
+  const appHintEl     = view.querySelector('#app-rec-hint');
+  const appErrorBox   = view.querySelector('#app-rec-error');
+
+  // =====================================================
+  // STATE
+  // =====================================================
   let recorder = null;
   let currentBlob = null;
   let currentMime = '';
   let currentDuration = 0;
 
+  let appRecorder = null;
+  let appBlob = null;
+  let appMime = '';
+  let appCursorPos = 0;
+
+  // =====================================================
+  // HELPER
+  // =====================================================
   function showError(msg) {
     errorBox.textContent = msg;
     errorBox.classList.remove('hidden');
@@ -136,8 +204,18 @@ registerRoute('#/notes/new', (_, view) => {
     errorBox.classList.add('hidden');
     errorBox.textContent = '';
   }
+  function showAppError(msg) {
+    appErrorBox.textContent = msg;
+    appErrorBox.classList.remove('hidden');
+  }
+  function clearAppError() {
+    appErrorBox.classList.add('hidden');
+    appErrorBox.textContent = '';
+  }
 
-  // --- MULAI REKAM ---
+  // =====================================================
+  // REKAMAN UTAMA
+  // =====================================================
   btnRecord.addEventListener('click', async () => {
     clearError();
 
@@ -157,7 +235,7 @@ registerRoute('#/notes/new', (_, view) => {
 
       btnRecord.classList.add('hidden');
       btnStop.classList.remove('hidden');
-      btnCancel.classList.remove('hidden');
+      btnCancelRec.classList.remove('hidden');
       btnTranscribe.classList.add('hidden');
       editorArea.classList.add('hidden');
       hintEl.textContent = 'Sedang merekam... bicara dengan jelas';
@@ -167,7 +245,6 @@ registerRoute('#/notes/new', (_, view) => {
     }
   });
 
-  // --- STOP REKAM ---
   btnStop.addEventListener('click', async () => {
     if (!recorder) return;
     try {
@@ -178,7 +255,7 @@ registerRoute('#/notes/new', (_, view) => {
 
       if (currentBlob.size > 19 * 1024 * 1024) {
         showError('Rekaman terlalu besar (' + (currentBlob.size / 1024 / 1024).toFixed(1) + ' MB). Maksimal 19 MB, coba rekam lebih pendek.');
-        resetButtons();
+        resetMainButtons();
         return;
       }
 
@@ -188,26 +265,23 @@ registerRoute('#/notes/new', (_, view) => {
       timerEl.classList.remove('text-stopRed');
 
       btnStop.classList.add('hidden');
-      btnCancel.classList.add('hidden');
+      btnCancelRec.classList.add('hidden');
       btnTranscribe.classList.remove('hidden');
       btnRecord.classList.add('hidden');
 
     } catch (err) {
       showError('Gagal menghentikan rekaman: ' + err.message);
-      resetButtons();
+      resetMainButtons();
     }
   });
 
-  // --- BATAL ---
-  btnCancel.addEventListener('click', () => {
+  btnCancelRec.addEventListener('click', () => {
     if (recorder) recorder.cancel();
     recorder = null;
-    resetButtons();
+    resetMainButtons();
     clearError();
-    editorArea.classList.add('hidden');
   });
 
-  // --- TRANSKRIPSI ---
   btnTranscribe.addEventListener('click', async () => {
     clearError();
     if (!currentBlob) return;
@@ -235,7 +309,21 @@ registerRoute('#/notes/new', (_, view) => {
     }
   });
 
-  // --- SIMPAN ---
+  function resetMainButtons() {
+    btnRecord.classList.remove('hidden');
+    btnStop.classList.add('hidden');
+    btnCancelRec.classList.add('hidden');
+    btnTranscribe.classList.add('hidden');
+    timerEl.textContent = '00:00';
+    timerEl.classList.add('text-road/40');
+    timerEl.classList.remove('text-stopRed');
+    visualEl.textContent = '🎙️';
+    hintEl.textContent = 'Tekan tombol untuk mulai merekam';
+  }
+
+  // =====================================================
+  // SIMPAN
+  // =====================================================
   btnSave.addEventListener('click', async () => {
     clearError();
     const title = titleInput.value.trim();
@@ -264,34 +352,182 @@ registerRoute('#/notes/new', (_, view) => {
     }
   });
 
-  // --- RESET ---
+  // =====================================================
+  // BATAL (reset semua)
+  // =====================================================
   btnReset.addEventListener('click', () => {
     if (recorder) recorder.cancel();
+    if (appRecorder) appRecorder.cancel();
     recorder = null;
+    appRecorder = null;
     currentBlob = null;
     currentMime = '';
     currentDuration = 0;
+    appBlob = null;
+    appMime = '';
     titleInput.value = '';
     textInput.value = '';
     editorArea.classList.add('hidden');
-    resetButtons();
+    resetMainButtons();
     clearError();
+    closeAppendModal();
   });
 
-  function resetButtons() {
-    btnRecord.classList.remove('hidden');
-    btnStop.classList.add('hidden');
-    btnCancel.classList.add('hidden');
-    btnTranscribe.classList.add('hidden');
-    timerEl.textContent = '00:00';
-    timerEl.classList.add('text-road/40');
-    timerEl.classList.remove('text-stopRed');
-    visualEl.textContent = '🎙️';
-    hintEl.textContent = 'Tekan tombol untuk mulai merekam';
+  // =====================================================
+  // TAMBAH REKAM (Modal)
+  // =====================================================
+  btnAppend.addEventListener('click', () => {
+    // Simpan posisi kursor saat ini
+    appCursorPos = textInput.selectionStart || textInput.value.length;
+
+    // Reset modal state
+    appBlob = null;
+    appMime = '';
+    resetAppendModal();
+
+    // Tampilkan modal
+    modal.classList.remove('hidden');
+  });
+
+  function resetAppendModal() {
+    appTimerEl.textContent = '00:00';
+    appTimerEl.classList.add('text-road/40');
+    appTimerEl.classList.remove('text-stopRed');
+    appVisualEl.textContent = '🎙️';
+    appHintEl.textContent = 'Siap merekam';
+    appBtnRecord.classList.remove('hidden');
+    appBtnStop.classList.add('hidden');
+    appBtnTrans.classList.add('hidden');
+    clearAppError();
   }
 
+  function closeAppendModal() {
+    if (appRecorder) { appRecorder.cancel(); appRecorder = null; }
+    modal.classList.add('hidden');
+    resetAppendModal();
+  }
+
+  // Klik di luar modal untuk menutup
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeAppendModal();
+  });
+
+  appBtnClose.addEventListener('click', closeAppendModal);
+
+  appBtnRecord.addEventListener('click', async () => {
+    clearAppError();
+
+    if (!VoiceRecorder.isSupported()) {
+      showAppError('Browser tidak mendukung rekaman.');
+      return;
+    }
+
+    try {
+      appRecorder = new VoiceRecorder();
+      await appRecorder.start((ms) => {
+        appTimerEl.textContent = fmtDuration(ms);
+        appTimerEl.classList.remove('text-road/40');
+        appTimerEl.classList.add('text-stopRed');
+        appVisualEl.textContent = (Math.floor(ms / 500) % 2) ? '🔴' : '🎙️';
+      });
+
+      appBtnRecord.classList.add('hidden');
+      appBtnStop.classList.remove('hidden');
+      appBtnTrans.classList.add('hidden');
+      appHintEl.textContent = 'Sedang merekam... bicara dengan jelas';
+
+    } catch (err) {
+      showAppError('Gagal mengakses mikrofon: ' + err.message);
+    }
+  });
+
+  appBtnStop.addEventListener('click', async () => {
+    if (!appRecorder) return;
+    try {
+      const result = await appRecorder.stop();
+      appBlob = result.blob;
+      appMime = result.mimeType;
+
+      if (appBlob.size > 19 * 1024 * 1024) {
+        showAppError('Rekaman terlalu besar. Coba lebih pendek.');
+        resetAppendModal();
+        return;
+      }
+
+      appVisualEl.textContent = '✅';
+      appHintEl.textContent = 'Siap disisipkan ke catatan';
+      appTimerEl.classList.add('text-road/40');
+      appTimerEl.classList.remove('text-stopRed');
+
+      appBtnStop.classList.add('hidden');
+      appBtnTrans.classList.remove('hidden');
+      appBtnRecord.classList.add('hidden');
+
+    } catch (err) {
+      showAppError('Gagal menghentikan rekaman: ' + err.message);
+      resetAppendModal();
+    }
+  });
+
+  appBtnTrans.addEventListener('click', async () => {
+    clearAppError();
+    if (!appBlob) return;
+
+    appBtnTrans.disabled = true;
+    appBtnTrans.innerHTML = '<span>⏳</span><span>Memproses...</span>';
+    appHintEl.textContent = 'Mengirim audio ke Gemini...';
+
+    try {
+      const base64 = await blobToBase64(appBlob);
+      const { API } = await import('./api.js');
+      const result = await API.transcribe(base64, appMime);
+
+      insertTextAtCursor(result.text || '');
+      toast('Teks tambahan disisipkan');
+      closeAppendModal();
+
+    } catch (err) {
+      showAppError('Transkripsi gagal: ' + err.message);
+      appBtnTrans.disabled = false;
+      appBtnTrans.innerHTML = '<span>✨</span><span>Sisipkan</span>';
+    }
+  });
+
+  /**
+   * Sisipkan teks di posisi kursor yang tersimpan
+   * Tambahkan spasi/tanda pemisah agar rapi
+   */
+  function insertTextAtCursor(text) {
+    if (!text) return;
+
+    const value = textInput.value;
+    const pos = Math.min(appCursorPos, value.length);
+
+    const before = value.substring(0, pos);
+    const after  = value.substring(pos);
+
+    // Tambah spasi/tanda baca jika perlu
+    let prefix = '';
+    let suffix = '';
+    if (before && !/[\s\n]$/.test(before)) prefix = ' ';
+    if (after && !/^[\s\n]/.test(after))   suffix = ' ';
+
+    const inserted = prefix + text + suffix;
+    textInput.value = before + inserted + after;
+
+    // Pindahkan kursor ke akhir teks yang baru disisipkan
+    const newPos = pos + inserted.length;
+    textInput.focus();
+    textInput.setSelectionRange(newPos, newPos);
+    appCursorPos = newPos;
+  }
+
+  // =====================================================
+  // CLEANUP
+  // =====================================================
   return () => {
     if (recorder) recorder.cancel();
+    if (appRecorder) appRecorder.cancel();
   };
 });
 
