@@ -126,7 +126,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 20;
+  z-index: 30;
 }
 
 /* --- Kendaraan (default: ground) --- */
@@ -145,6 +145,7 @@ html, body { font-family: 'Roboto', sans-serif; }
 /* --- Kendaraan udara naik lebih tinggi --- */
 .cute-car.air {
   bottom: 14px;
+  z-index: 30;
 }
 
 /* --- Rotor helikopter berputar --- */
