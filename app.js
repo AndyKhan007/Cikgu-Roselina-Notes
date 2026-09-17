@@ -35,23 +35,43 @@ function errorBlock(msg, retryHash = null) {
   `;
 }
 
+/**
+ * Route guard: kalau belum login, redirect ke beranda.
+ * Return true kalau boleh lanjut.
+ */
+function guardRoute() {
+  if (!isLoggedIn()) {
+    toast('Silakan login terlebih dahulu');
+    location.hash = '#/';
+    return false;
+  }
+  return true;
+}
+
 // ===================== ROUTES =====================
 
-// --- Menu utama ---
+// --- Menu utama (publik) ---
 registerRoute('#/', (_, view) => {
+  const logged = isLoggedIn();
+
   view.appendChild(el(`
     <div>
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Selamat datang${isLoggedIn() ? ', ' + getUser().name.split(' ')[0] : ''} 👋</h1>
-        <p class="text-road/60 text-sm mt-1">Pilih menu untuk mulai membuat catatan mengemudi.</p>
+        <h1 class="text-2xl font-bold">Selamat datang${logged ? ', ' + getUser().name.split(' ')[0] : ''} 👋</h1>
+        <p class="text-road/60 text-sm mt-1">
+          ${logged
+            ? 'Pilih menu untuk mulai membuat catatan mengemudi.'
+            : 'Silakan login untuk mengakses menu bertanda 🔒.'}
+        </p>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <a href="#/notes/new" class="menu-card">
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="menu-grid">
+        <a href="#/notes/new" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">🎙️</span>
           <span class="font-semibold">Buat Catatan</span>
           <span class="text-xs text-road/60">Rekam suara, otomatis jadi teks. Perlu login.</span>
         </a>
-        <a href="#/groups/new" class="menu-card">
+        <a href="#/groups/new" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">🗂️</span>
           <span class="font-semibold">Buat Group Catatan</span>
           <span class="text-xs text-road/60">Gabung beberapa catatan. Perlu login.</span>
@@ -61,7 +81,7 @@ registerRoute('#/', (_, view) => {
           <span class="font-semibold">Lihat Slide Note</span>
           <span class="text-xs text-road/60">Tampilkan slide catatan. Bisa diakses siapa saja.</span>
         </a>
-        <a href="#/notes" class="menu-card">
+        <a href="#/notes" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">📒</span>
           <span class="font-semibold">Catatan Saya</span>
           <span class="text-xs text-road/60">Daftar catatan yang Anda buat. Perlu login.</span>
@@ -69,22 +89,29 @@ registerRoute('#/', (_, view) => {
       </div>
     </div>
   `));
+
+  // Intercept klik pada menu terkunci
+  view.querySelectorAll('[data-requires-login]').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (!isLoggedIn()) {
+        e.preventDefault();
+        toast('Silakan login terlebih dahulu untuk mengakses menu ini');
+      }
+    });
+  });
 });
 
 // =====================================================
 // --- DAFTAR CATATAN (#/notes) ---
 // =====================================================
 registerRoute('#/notes', (_, view) => {
+  if (!guardRoute()) return;
+
   const wrap = el(`
     <div>
-      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-        <div>
-          <h1 class="text-2xl font-bold">Catatan Saya</h1>
-          <p class="text-sm text-road/60 mt-1">Semua catatan yang Anda buat.</p>
-        </div>
-        <a href="#/notes/new" class="btn btn-primary">
-          <span>🎙️</span><span>Buat Baru</span>
-        </a>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Catatan Saya</h1>
+        <p class="text-sm text-road/60 mt-1">Semua catatan yang Anda buat.</p>
       </div>
       <div id="notes-list">${loadingBlock('Memuat catatan...')}</div>
     </div>
@@ -93,17 +120,6 @@ registerRoute('#/notes', (_, view) => {
 
   const listEl = wrap.querySelector('#notes-list');
 
-  if (!isLoggedIn()) {
-    listEl.innerHTML = `
-      <div class="bg-milk border border-road/10 rounded-2xl p-8 text-center">
-        <p class="text-road/70 mb-4">Anda perlu login untuk melihat catatan.</p>
-        <p class="text-xs text-road/50">Gunakan tombol "Login dengan Google" di atas.</p>
-      </div>
-    `;
-    return;
-  }
-
-  // Fetch
   (async () => {
     try {
       const { API } = await import('./api.js');
@@ -136,7 +152,6 @@ registerRoute('#/notes', (_, view) => {
       </div>
     `;
 
-    // Pasang event listener untuk tombol hapus
     listEl.querySelectorAll('[data-delete-id]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
@@ -148,7 +163,6 @@ registerRoute('#/notes', (_, view) => {
             const { API } = await import('./api.js');
             await API.deleteNote(id);
             toast('Catatan dihapus');
-            // Refresh
             const notes = await API.listNotes();
             renderList(notes);
           } catch (err) {
@@ -187,6 +201,8 @@ registerRoute('#/notes', (_, view) => {
 // --- BUAT CATATAN BARU (#/notes/new) ---
 // =====================================================
 registerRoute('#/notes/new', (_, view) => {
+  if (!guardRoute()) return;
+
   view.appendChild(el(`
     <div class="max-w-2xl mx-auto">
 
@@ -554,6 +570,8 @@ registerRoute('#/notes/new', (_, view) => {
 // --- DETAIL CATATAN (#/notes/:id) ---
 // =====================================================
 registerRoute('#/notes/:id', (params, view) => {
+  if (!guardRoute()) return;
+
   const id = params.id;
 
   const wrap = el(`
@@ -568,18 +586,10 @@ registerRoute('#/notes/:id', (params, view) => {
 
   const bodyEl = wrap.querySelector('#detail-body');
 
-  if (!isLoggedIn()) {
-    bodyEl.innerHTML = errorBlock('Anda perlu login untuk melihat catatan ini.');
-    return;
-  }
-
-  let currentNote = null;
-
   (async () => {
     try {
       const { API } = await import('./api.js');
       const note = await API.getNote(id);
-      currentNote = note;
       renderDetail(note);
     } catch (err) {
       bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
@@ -628,6 +638,8 @@ registerRoute('#/notes/:id', (params, view) => {
 // --- EDIT CATATAN (#/notes/:id/edit) ---
 // =====================================================
 registerRoute('#/notes/:id/edit', (params, view) => {
+  if (!guardRoute()) return;
+
   const id = params.id;
 
   const wrap = el(`
@@ -645,11 +657,6 @@ registerRoute('#/notes/:id/edit', (params, view) => {
   view.appendChild(wrap);
 
   const bodyEl = wrap.querySelector('#edit-body');
-
-  if (!isLoggedIn()) {
-    bodyEl.innerHTML = errorBlock('Anda perlu login untuk mengedit catatan.');
-    return;
-  }
 
   (async () => {
     try {
@@ -743,6 +750,7 @@ registerRoute('#/notes/:id/edit', (params, view) => {
 // --- Group (placeholder Phase 4) ---
 // =====================================================
 registerRoute('#/groups', (_, view) => {
+  if (!guardRoute()) return;
   view.appendChild(el(`
     <div>
       <h1 class="text-xl font-bold mb-2">Group Catatan</h1>
@@ -752,6 +760,7 @@ registerRoute('#/groups', (_, view) => {
 });
 
 registerRoute('#/groups/new', (_, view) => {
+  if (!guardRoute()) return;
   view.appendChild(el(`
     <div>
       <h1 class="text-xl font-bold mb-2">Buat Group</h1>
@@ -825,7 +834,11 @@ async function boot() {
     document.getElementById('app').classList.remove('hidden');
   }, 400);
 
-  initAuth(() => {
+  // Init auth (tanpa callback)
+  initAuth();
+
+  // Dengarkan perubahan status login → refresh halaman
+  document.addEventListener('auth:change', () => {
     navigate();
   });
 
