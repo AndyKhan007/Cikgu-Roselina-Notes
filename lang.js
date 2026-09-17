@@ -2389,3 +2389,171 @@ Object.assign(TRANSLATIONS.ru, {
   'Layar penuh': 'Полный экран',
   'navigasi': 'навигация'
 });
+
+// =====================================================
+// TAMBAHAN PHASE 4B+ — Translate Group & Anaknya
+// =====================================================
+Object.assign(TRANSLATIONS.en, {
+  'Terjemahkan Semua': 'Translate All',
+  'Pilih bahasa dulu': 'Choose language first',
+  'Semua terjemahan siap': 'All translations ready',
+  'Sudah diterjemahkan': 'Already translated',
+  'Belum diterjemahkan': 'Not translated yet',
+  'Terjemahkan semua?': 'Translate everything?',
+  'Proses ini akan memakan waktu beberapa saat.': 'This will take a little while.',
+  'Ya, Terjemahkan': 'Yes, Translate',
+  'catatan berhasil diterjemahkan': 'notes translated',
+  'Membatalkan...': 'Cancelling...',
+  'berhasil': 'succeeded',
+  'gagal': 'failed'
+});
+
+Object.assign(TRANSLATIONS.ms, {
+  'Terjemahkan Semua': 'Terjemah Semua',
+  'Pilih bahasa dulu': 'Pilih bahasa dahulu',
+  'Semua terjemahan siap': 'Semua terjemahan sedia',
+  'Sudah diterjemahkan': 'Sudah diterjemah',
+  'Belum diterjemahkan': 'Belum diterjemah',
+  'Terjemahkan semua?': 'Terjemah semua?',
+  'Proses ini akan memakan waktu beberapa saat.': 'Proses ini akan mengambil masa sebentar.',
+  'Ya, Terjemahkan': 'Ya, Terjemah',
+  'catatan berhasil diterjemahkan': 'nota berjaya diterjemah',
+  'Membatalkan...': 'Membatalkan...',
+  'berhasil': 'berjaya',
+  'gagal': 'gagal'
+});
+
+Object.assign(TRANSLATIONS.zh, {
+  'Terjemahkan Semua': '全部翻译',
+  'Pilih bahasa dulu': '请先选择语言',
+  'Semua terjemahan siap': '所有翻译已就绪',
+  'Sudah diterjemahkan': '已翻译',
+  'Belum diterjemahkan': '尚未翻译',
+  'Terjemahkan semua?': '全部翻译？',
+  'Proses ini akan memakan waktu beberapa saat.': '此过程需要一些时间。',
+  'Ya, Terjemahkan': '是的，翻译',
+  'catatan berhasil diterjemahkan': '条笔记已翻译',
+  'Membatalkan...': '正在取消...',
+  'berhasil': '成功',
+  'gagal': '失败'
+});
+
+Object.assign(TRANSLATIONS.ja, {
+  'Terjemahkan Semua': 'すべて翻訳',
+  'Pilih bahasa dulu': '先に言語を選択',
+  'Semua terjemahan siap': 'すべての翻訳準備完了',
+  'Sudah diterjemahkan': '翻訳済み',
+  'Belum diterjemahkan': '未翻訳',
+  'Terjemahkan semua?': 'すべて翻訳しますか？',
+  'Proses ini akan memakan waktu beberapa saat.': 'この処理には少し時間がかかります。',
+  'Ya, Terjemahkan': 'はい、翻訳',
+  'catatan berhasil diterjemahkan': '件のノートを翻訳しました',
+  'Membatalkan...': 'キャンセル中...',
+  'berhasil': '成功',
+  'gagal': '失敗'
+});
+
+Object.assign(TRANSLATIONS.ko, {
+  'Terjemahkan Semua': '모두 번역',
+  'Pilih bahasa dulu': '먼저 언어 선택',
+  'Semua terjemahan siap': '모든 번역 준비 완료',
+  'Sudah diterjemahkan': '번역됨',
+  'Belum diterjemahkan': '번역되지 않음',
+  'Terjemahkan semua?': '모두 번역하시겠습니까?',
+  'Proses ini akan memakan waktu beberapa saat.': '이 작업은 시간이 걸립니다.',
+  'Ya, Terjemahkan': '예, 번역',
+  'catatan berhasil diterjemahkan': '개 노트 번역 완료',
+  'Membatalkan...': '취소 중...',
+  'berhasil': '성공',
+  'gagal': '실패'
+});
+
+Object.assign(TRANSLATIONS.hi, {
+  'Terjemahkan Semua': 'सभी का अनुवाद करें',
+  'Pilih bahasa dulu': 'पहले भाषा चुनें',
+  'Semua terjemahan siap': 'सभी अनुवाद तैयार',
+  'Sudah diterjemahkan': 'पहले से अनुवादित',
+  'Belum diterjemahkan': 'अभी तक अनुवादित नहीं',
+  'Terjemahkan semua?': 'सब कुछ अनुवाद करें?',
+  'Proses ini akan memakan waktu beberapa saat.': 'इसमें थोड़ा समय लगेगा।',
+  'Ya, Terjemahkan': 'हाँ, अनुवाद करें',
+  'catatan berhasil diterjemahkan': 'नोट्स का अनुवाद हुआ',
+  'Membatalkan...': 'रद्द किया जा रहा है...',
+  'berhasil': 'सफल',
+  'gagal': 'विफल'
+});
+
+Object.assign(TRANSLATIONS.th, {
+  'Terjemahkan Semua': 'แปลทั้งหมด',
+  'Pilih bahasa dulu': 'เลือกภาษาก่อน',
+  'Semua terjemahan siap': 'การแปลทั้งหมดพร้อมแล้ว',
+  'Sudah diterjemahkan': 'แปลแล้ว',
+  'Belum diterjemahkan': 'ยังไม่ได้แปล',
+  'Terjemahkan semua?': 'แปลทั้งหมดหรือไม่?',
+  'Proses ini akan memakan waktu beberapa saat.': 'กระบวนการนี้จะใช้เวลาสักครู่',
+  'Ya, Terjemahkan': 'ใช่ แปลเลย',
+  'catatan berhasil diterjemahkan': 'บันทึกแปลแล้ว',
+  'Membatalkan...': 'กำลังยกเลิก...',
+  'berhasil': 'สำเร็จ',
+  'gagal': 'ล้มเหลว'
+});
+
+Object.assign(TRANSLATIONS.tl, {
+  'Terjemahkan Semua': 'Isalin Lahat',
+  'Pilih bahasa dulu': 'Pumili muna ng wika',
+  'Semua terjemahan siap': 'Handa na lahat ng salin',
+  'Sudah diterjemahkan': 'Naisalin na',
+  'Belum diterjemahkan': 'Hindi pa naisalin',
+  'Terjemahkan semua?': 'Isalin lahat?',
+  'Proses ini akan memakan waktu beberapa sandali.': 'Aabutin ito ng ilang sandali.',
+  'Ya, Terjemahkan': 'Oo, Isalin',
+  'catatan berhasil diterjemahkan': 'mga tala naisalin',
+  'Membatalkan...': 'Kinakansela...',
+  'berhasil': 'nagtagumpay',
+  'gagal': 'nabigo'
+});
+
+Object.assign(TRANSLATIONS.my, {
+  'Terjemahkan Semua': 'အားလုံးဘာသာပြန်ရန်',
+  'Pilih bahasa dulu': 'ဘာသာစကားအရင်ရွေးပါ',
+  'Semua terjemahan siap': 'ဘာသာပြန်အားလုံး အဆင်သင့်',
+  'Sudah diterjemahkan': 'ဘာသာပြန်ပြီး',
+  'Belum diterjemahkan': 'ဘာသာမပြန်ရသေး',
+  'Terjemahkan semua?': 'အားလုံးဘာသာပြန်မလား?',
+  'Proses ini akan memakan waktu beberapa saat.': 'ဤလုပ်ငန်းစဉ်သည် အချိန်အနည်းငယ်ယူပါမည်။',
+  'Ya, Terjemahkan': 'ဟုတ်ကဲ့၊ ဘာသာပြန်ပါ',
+  'catatan berhasil diterjemahkan': 'မှတ်စုများ ဘာသာပြန်ပြီးပါပြီ',
+  'Membatalkan...': 'ပယ်ဖျက်နေသည်...',
+  'berhasil': 'အောင်မြင်သည်',
+  'gagal': 'မအောင်မြင်ပါ'
+});
+
+Object.assign(TRANSLATIONS.vi, {
+  'Terjemahkan Semua': 'Dịch tất cả',
+  'Pilih bahasa dulu': 'Chọn ngôn ngữ trước',
+  'Semua terjemahan siap': 'Tất cả bản dịch đã sẵn sàng',
+  'Sudah diterjemahkan': 'Đã dịch',
+  'Belum diterjemahkan': 'Chưa dịch',
+  'Terjemahkan semua?': 'Dịch tất cả?',
+  'Proses ini akan memakan waktu beberapa saat.': 'Quá trình này sẽ mất một lúc.',
+  'Ya, Terjemahkan': 'Có, dịch',
+  'catatan berhasil diterjemahkan': 'ghi chú đã dịch',
+  'Membatalkan...': 'Đang hủy...',
+  'berhasil': 'thành công',
+  'gagal': 'thất bại'
+});
+
+Object.assign(TRANSLATIONS.ru, {
+  'Terjemahkan Semua': 'Перевести всё',
+  'Pilih bahasa dulu': 'Сначала выберите язык',
+  'Semua terjemahan siap': 'Все переводы готовы',
+  'Sudah diterjemahkan': 'Уже переведено',
+  'Belum diterjemahkan': 'Ещё не переведено',
+  'Terjemahkan semua?': 'Перевести всё?',
+  'Proses ini akan memakan waktu beberapa saat.': 'Это займёт некоторое время.',
+  'Ya, Terjemahkan': 'Да, перевести',
+  'catatan berhasil diterjemahkan': 'заметок переведено',
+  'Membatalkan...': 'Отмена...',
+  'berhasil': 'успешно',
+  'gagal': 'ошибок'
+});

@@ -1,5 +1,6 @@
 // =====================================================
 // Slide Viewer — slideshow publik dengan narator + karaoke
+// + Terjemahkan Semua (translate group & anaknya sekaligus)
 // =====================================================
 
 import { el, toast } from './ui.js';
@@ -16,6 +17,11 @@ function parseCache(json) {
   try { return JSON.parse(json || '{}') || {}; } catch (e) { return {}; }
 }
 
+const wait = (ms) => new Promise(r => setTimeout(r, ms));
+
+// Jeda minimal antar request Gemini (aman di bawah 15 RPM)
+const RATE_LIMIT_MS = 4500;
+
 export function mountSlideViewer(params, view) {
   const groupId = params.groupId;
   const narrator = new Narrator();
@@ -26,6 +32,10 @@ export function mountSlideViewer(params, view) {
   if (rate < 0.5 || rate > 2) rate = 1;
   let autoPlay = localStorage.getItem('crn_slide_autoplay') === '1';
   let wasPlayingBeforeChange = false;
+
+  // State translation job
+  let translating = false;
+  let cancelTranslate = false;
 
   view.appendChild(el(`
     <div class="max-w-4xl mx-auto">
@@ -49,7 +59,7 @@ export function mountSlideViewer(params, view) {
   }
   document.addEventListener('keydown', onKey);
 
-  // ============ Load ============
+  // ============ Load Group ============
   (async () => {
     try {
       const { API } = await import('./api.js');
@@ -89,7 +99,8 @@ export function mountSlideViewer(params, view) {
       </div>
 
       <div id="slide-area" class="bg-white border border-road/10 rounded-2xl p-6 mb-4 min-h-[260px] transition-all">
-        <h2 id="slide-title" class="text-2xl font-bold leading-snug mb-4"></h2>
+        <h2 id="slide-title" class="text-2xl font-bold leading-snug mb-1"></h2>
+        <p id="slide-trans-status" class="text-xs mb-3"></p>
         <div id="slide-karaoke" class="text-[17px] leading-loose whitespace-pre-wrap break-words"></div>
       </div>
 
@@ -115,32 +126,48 @@ export function mountSlideViewer(params, view) {
         </button>
       </div>
 
-      <div class="bg-milk border border-road/10 rounded-xl p-3 mb-3 flex flex-wrap gap-3 items-center justify-center text-sm">
-        <div class="flex items-center gap-2">
+      <div class="bg-milk border border-road/10 rounded-xl p-3 mb-3 space-y-3">
+
+        <!-- Baris 1: Bahasa + Terjemahkan Semua -->
+        <div class="flex flex-wrap gap-2 items-center justify-center text-sm">
           <span class="text-road/60 text-xs">${t('Bahasa')}:</span>
           <select id="slide-lang" class="text-xs px-2 py-1 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
             <option value="id">🇮🇩 ${t('Bahasa Indonesia (asli)')}</option>
             ${TRANSLATE_LANGS.map(L => `<option value="${L.code}">${L.flag} ${L.native}</option>`).join('')}
           </select>
-          <button id="slide-translate-btn" class="btn btn-cyan text-xs px-3 py-1" title="${t('Terjemahkan')}">
-            <span>✨</span>
+          <button id="slide-translate-all" class="btn btn-cyan text-xs px-3 py-1">
+            <span>✨</span><span id="slide-translate-label">${t('Terjemahkan Semua')}</span>
           </button>
         </div>
 
-        <div class="flex items-center gap-2">
-          <span class="text-road/60 text-xs">${t('Kecepatan')}:</span>
-          <input id="slide-rate" type="range" min="0.5" max="2" step="0.1" value="${rate}" class="w-20 accent-cyanGlow" />
-          <span id="slide-rate-value" class="text-xs font-mono w-9">${rate.toFixed(1)}x</span>
+        <!-- Progress bar translate -->
+        <div id="slide-translate-progress" class="hidden">
+          <div class="flex items-center gap-2 text-xs text-road/70 mb-1">
+            <span id="translate-progress-label" class="truncate">${t('Menerjemahkan...')}</span>
+            <button id="translate-cancel" class="ml-auto text-road/50 hover:text-stopRed flex-shrink-0">✖</button>
+          </div>
+          <div class="w-full bg-road/5 rounded-full h-1 overflow-hidden">
+            <div id="translate-progress-bar" class="bg-cyanGlow h-full transition-all" style="width: 0%"></div>
+          </div>
         </div>
 
-        <label class="flex items-center gap-1.5 cursor-pointer text-xs text-road/70">
-          <input id="slide-autoplay" type="checkbox" class="w-4 h-4 accent-cyanGlow" ${autoPlay ? 'checked' : ''} />
-          <span>${t('Auto')}</span>
-        </label>
+        <!-- Baris 2: Kecepatan + Auto + Fullscreen -->
+        <div class="flex flex-wrap gap-3 items-center justify-center text-sm pt-2 border-t border-road/5">
+          <div class="flex items-center gap-2">
+            <span class="text-road/60 text-xs">${t('Kecepatan')}:</span>
+            <input id="slide-rate" type="range" min="0.5" max="2" step="0.1" value="${rate}" class="w-20 accent-cyanGlow" />
+            <span id="slide-rate-value" class="text-xs font-mono w-9">${rate.toFixed(1)}x</span>
+          </div>
 
-        <button id="slide-fullscreen" class="text-xs text-road/60 hover:text-road px-2 py-1 rounded hover:bg-road/5">
-          ⛶ ${t('Layar penuh')}
-        </button>
+          <label class="flex items-center gap-1.5 cursor-pointer text-xs text-road/70">
+            <input id="slide-autoplay" type="checkbox" class="w-4 h-4 accent-cyanGlow" ${autoPlay ? 'checked' : ''} />
+            <span>${t('Auto')}</span>
+          </label>
+
+          <button id="slide-fullscreen" class="text-xs text-road/60 hover:text-road px-2 py-1 rounded hover:bg-road/5">
+            ⛶ ${t('Layar penuh')}
+          </button>
+        </div>
       </div>
 
       <p class="text-center text-[11px] text-road/40">
@@ -168,7 +195,11 @@ export function mountSlideViewer(params, view) {
       renderSlide();
     });
 
-    viewerEl.querySelector('#slide-translate-btn').addEventListener('click', doTranslate);
+    viewerEl.querySelector('#slide-translate-all').addEventListener('click', translateAll);
+    viewerEl.querySelector('#translate-cancel').addEventListener('click', () => {
+      cancelTranslate = true;
+      toast(t('Membatalkan...'));
+    });
 
     viewerEl.querySelector('#slide-rate').addEventListener('input', (e) => {
       const v = parseFloat(e.target.value) || 1;
@@ -193,6 +224,7 @@ export function mountSlideViewer(params, view) {
     };
 
     updateNarratorUI('idle');
+    updateTranslateButton();
   }
 
   // ============ Helpers ============
@@ -209,6 +241,40 @@ export function mountSlideViewer(params, view) {
     if (selectedLang === 'id') return true;
     const cache = parseCache(item.note.translated_json);
     return !!cache[selectedLang];
+  }
+
+  function countTranslated() {
+    return group.items.filter(isTranslated).length;
+  }
+
+  function updateTranslateButton() {
+    if (translating) return;
+    const btn = viewerEl.querySelector('#slide-translate-all');
+    const label = viewerEl.querySelector('#slide-translate-label');
+    if (!btn || !label) return;
+
+    if (selectedLang === 'id') {
+      btn.disabled = true;
+      btn.classList.remove('btn-cyan');
+      btn.classList.add('btn-ghost');
+      label.textContent = t('Pilih bahasa dulu');
+      return;
+    }
+
+    const total = group.items.length;
+    const done = countTranslated();
+
+    if (done === total) {
+      btn.disabled = true;
+      btn.classList.remove('btn-cyan');
+      btn.classList.add('btn-ghost');
+      label.textContent = `✓ ${t('Semua terjemahan siap')}`;
+    } else {
+      btn.disabled = false;
+      btn.classList.add('btn-cyan');
+      btn.classList.remove('btn-ghost');
+      label.textContent = `${t('Terjemahkan Semua')} (${done}/${total})`;
+    }
   }
 
   // ============ Render Slide ============
@@ -231,19 +297,18 @@ export function mountSlideViewer(params, view) {
     viewerEl.querySelector('#slide-prev').disabled = currentIndex === 0;
     viewerEl.querySelector('#slide-next').disabled = currentIndex === group.items.length - 1;
 
-    const transBtn = viewerEl.querySelector('#slide-translate-btn');
-    if (selectedLang === 'id') {
-      transBtn.classList.add('hidden');
-    } else {
-      transBtn.classList.remove('hidden');
-      if (isTranslated(item)) {
-        transBtn.innerHTML = '<span>✓</span>';
-        transBtn.classList.remove('btn-cyan');
-        transBtn.classList.add('btn-ghost');
+    // Indikator status terjemahan
+    const statusEl = viewerEl.querySelector('#slide-trans-status');
+    if (statusEl) {
+      if (selectedLang === 'id') {
+        statusEl.textContent = '';
+        statusEl.className = 'text-xs mb-3';
+      } else if (isTranslated(item)) {
+        statusEl.textContent = `✓ ${t('Sudah diterjemahkan')}`;
+        statusEl.className = 'text-xs mb-3 text-goGreen';
       } else {
-        transBtn.innerHTML = '<span>✨</span>';
-        transBtn.classList.add('btn-cyan');
-        transBtn.classList.remove('btn-ghost');
+        statusEl.textContent = `⚠ ${t('Belum diterjemahkan')}`;
+        statusEl.className = 'text-xs mb-3 text-warnYellow';
       }
     }
 
@@ -251,6 +316,8 @@ export function mountSlideViewer(params, view) {
       wasPlayingBeforeChange = false;
       setTimeout(() => startPlay(), 150);
     }
+
+    updateTranslateButton();
   }
 
   // ============ Narration ============
@@ -283,7 +350,6 @@ export function mountSlideViewer(params, view) {
       show(playBtn, false); show(pauseBtn, true); show(stopBtn, true);
     } else if (state === 'paused') {
       show(playBtn, false); show(pauseBtn, false); show(stopBtn, true);
-      // Ubah tombol pause jadi resume? Simpel: biarkan user klik play di keyboard
     } else {
       show(playBtn, true); show(pauseBtn, false); show(stopBtn, false);
     }
@@ -311,38 +377,138 @@ export function mountSlideViewer(params, view) {
     renderSlide();
   }
 
-  // ============ Translate ============
-  async function doTranslate() {
-    if (selectedLang === 'id') return;
-    const item = getItem();
-    const note = item.note;
+  // ============ Translate All (group + semua anak) ============
+  async function translateAll() {
+    if (selectedLang === 'id') { toast(t('Pilih bahasa dulu')); return; }
+    if (translating) return;
 
-    if (isTranslated(item)) { renderSlide(); return; }
+    const untranslated = group.items.filter(it => !isTranslated(it));
 
-    const btn = viewerEl.querySelector('#slide-translate-btn');
-    btn.disabled = true;
-    btn.innerHTML = '⏳';
-
-    try {
-      const { API } = await import('./api.js');
-      const langInfo = TRANSLATE_LANGS.find(L => L.code === selectedLang);
-      const promptName = langInfo?.promptName || selectedLang;
-      const result = await API.translate(note.original_text || '', promptName);
-
-      try { await API.updateTranslation(note.id, selectedLang, result.text); }
-      catch (e) { console.warn('Cache save failed:', e); }
-
-      const cache = parseCache(note.translated_json);
-      cache[selectedLang] = result.text;
-      note.translated_json = JSON.stringify(cache);
-
-      renderSlide();
-      toast(t('Terjemahan selesai'));
-    } catch (err) {
-      toast(t('Terjemahan gagal') + ': ' + err.message);
-      btn.disabled = false;
-      btn.innerHTML = '<span>✨</span>';
+    if (untranslated.length === 0) {
+      toast(t('Semua terjemahan siap'));
+      return;
     }
+
+    const langInfo = TRANSLATE_LANGS.find(L => L.code === selectedLang);
+    const langName = langInfo?.native || selectedLang;
+
+    const ok = await showConfirm(
+      t('Terjemahkan semua?'),
+      `${untranslated.length} ${t('catatan')} → ${langName}`
+    );
+    if (!ok) return;
+
+    // Setup UI
+    translating = true;
+    cancelTranslate = false;
+    const progEl = viewerEl.querySelector('#slide-translate-progress');
+    const progLabel = viewerEl.querySelector('#translate-progress-label');
+    const progBar = viewerEl.querySelector('#translate-progress-bar');
+    progEl.classList.remove('hidden');
+    progBar.style.width = '0%';
+    progLabel.textContent = t('Menerjemahkan...');
+
+    // Disable controls
+    const btnAll = viewerEl.querySelector('#slide-translate-all');
+    const langSel = viewerEl.querySelector('#slide-lang');
+    btnAll.disabled = true;
+    langSel.disabled = true;
+
+    const { API } = await import('./api.js');
+    const promptName = langInfo?.promptName || selectedLang;
+
+    let success = 0;
+    let failed = 0;
+    let i = 0;
+    let lastRequestAt = 0;
+
+    for (const item of untranslated) {
+      if (cancelTranslate) break;
+
+      const title = item.note.title || t('Tanpa judul');
+      progLabel.textContent = `${i + 1}/${untranslated.length} · ${title}`;
+      progBar.style.width = `${(i / untranslated.length) * 100}%`;
+
+      try {
+        // Rate limit dinamis: kalau request sebelumnya cepat, kita jeda; kalau lambat, tidak perlu jeda
+        if (lastRequestAt > 0) {
+          const elapsed = Date.now() - lastRequestAt;
+          const waitFor = Math.max(0, RATE_LIMIT_MS - elapsed);
+          if (waitFor > 0) {
+            await wait(waitFor);
+            if (cancelTranslate) break;
+          }
+        }
+
+        const start = Date.now();
+        const result = await API.translate(item.note.original_text || '', promptName);
+        lastRequestAt = Date.now();
+
+        try { await API.updateTranslation(item.note.id, selectedLang, result.text); }
+        catch (e) { console.warn('Cache save failed for', item.note.id, e); }
+
+        const cache = parseCache(item.note.translated_json);
+        cache[selectedLang] = result.text;
+        item.note.translated_json = JSON.stringify(cache);
+
+        success++;
+
+        // Kalau item ini yang sedang ditampilkan, refresh slide
+        if (item === getItem()) {
+          const wasPlaying = narrator.isPlaying || narrator.isPaused;
+          if (wasPlaying) narrator.stop();
+          renderSlide();
+        }
+      } catch (err) {
+        console.error('Translate failed:', item.note.title, err);
+        failed++;
+      }
+
+      i++;
+      progBar.style.width = `${(i / untranslated.length) * 100}%`;
+    }
+
+    // Cleanup UI
+    progEl.classList.add('hidden');
+    translating = false;
+    btnAll.disabled = false;
+    langSel.disabled = false;
+
+    if (narrator.isPlaying || narrator.isPaused) narrator.stop();
+    renderSlide();
+
+    if (cancelTranslate) {
+      toast(`${success} ${t('catatan berhasil diterjemahkan')} · ${t('dibatalkan')}`);
+    } else if (failed === 0) {
+      toast(`${success} ${t('catatan berhasil diterjemahkan')}`);
+    } else {
+      toast(`${success} ${t('berhasil')} · ${failed} ${t('gagal')}`);
+    }
+  }
+
+  // ============ Confirm Dialog ============
+  function showConfirm(title, message) {
+    return new Promise((resolve) => {
+      const overlay = el(`
+        <div class="fixed inset-0 z-[70] bg-road/60 flex items-center justify-center p-4">
+          <div class="bg-milk rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-road/10 text-center">
+            <div class="text-4xl mb-3">🌐</div>
+            <h3 class="font-bold text-lg mb-2">${escapeHtml(title)}</h3>
+            <p class="text-sm text-road/70 mb-2">${escapeHtml(message)}</p>
+            <p class="text-xs text-road/50 mb-5">${t('Proses ini akan memakan waktu beberapa saat.')}</p>
+            <div class="flex gap-2 justify-center">
+              <button id="cf-no" class="btn btn-ghost"><span>✖️</span><span>${t('Batal')}</span></button>
+              <button id="cf-yes" class="btn btn-cyan"><span>✨</span><span>${t('Ya, Terjemahkan')}</span></button>
+            </div>
+          </div>
+        </div>
+      `);
+      document.body.appendChild(overlay);
+      const close = (val) => { overlay.remove(); resolve(val); };
+      overlay.querySelector('#cf-no').addEventListener('click', () => close(false));
+      overlay.querySelector('#cf-yes').addEventListener('click', () => close(true));
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+    });
   }
 
   // ============ Fullscreen ============
@@ -357,6 +523,7 @@ export function mountSlideViewer(params, view) {
 
   // ============ Cleanup ============
   return () => {
+    cancelTranslate = true;
     document.removeEventListener('keydown', onKey);
     try { narrator.stop(); } catch (e) {}
   };
