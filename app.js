@@ -1,9 +1,39 @@
 import { CONFIG } from './config.js';
 import { initAuth, getUser, isLoggedIn } from './auth.js';
 import { registerRoute, startRouter, navigate } from './router.js';
-import { el, toast, playLoadingAnimation } from './ui.js';
+import { el, toast, playLoadingAnimation, fmtDate } from './ui.js';
 import { startLogoAnimation } from './logo-animation.js';
 import { VoiceRecorder, blobToBase64, fmtDuration } from './recorder.js';
+
+// ===================== HELPER UMUM =====================
+function escapeHtml(s = '') {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+function truncate(s = '', n = 160) {
+  s = String(s);
+  return s.length > n ? s.substring(0, n).trim() + '…' : s;
+}
+
+function loadingBlock(text = 'Memuat...') {
+  return `
+    <div class="text-center py-20 text-road/50">
+      <div class="inline-block w-8 h-8 border-4 border-road/10 border-t-cyanGlow rounded-full animate-spin mb-3"></div>
+      <p class="text-sm">${text}</p>
+    </div>
+  `;
+}
+
+function errorBlock(msg, retryHash = null) {
+  return `
+    <div class="bg-stopRed/10 border border-stopRed/30 rounded-2xl p-6 text-center">
+      <p class="text-stopRed font-medium mb-3">⚠️ ${escapeHtml(msg)}</p>
+      ${retryHash ? `<a href="${retryHash}" class="btn btn-ghost inline-flex">🔄 Coba Lagi</a>` : ''}
+    </div>
+  `;
+}
 
 // ===================== ROUTES =====================
 
@@ -41,17 +71,121 @@ registerRoute('#/', (_, view) => {
   `));
 });
 
-// --- Catatan saya (placeholder Phase 2C) ---
+// =====================================================
+// --- DAFTAR CATATAN (#/notes) ---
+// =====================================================
 registerRoute('#/notes', (_, view) => {
-  view.appendChild(el(`
+  const wrap = el(`
     <div>
-      <h1 class="text-xl font-bold mb-2">Catatan Saya</h1>
-      <p class="text-sm text-road/60">Fitur daftar catatan akan dibangun pada Phase 2C.</p>
+      <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 class="text-2xl font-bold">Catatan Saya</h1>
+          <p class="text-sm text-road/60 mt-1">Semua catatan yang Anda buat.</p>
+        </div>
+        <a href="#/notes/new" class="btn btn-primary">
+          <span>🎙️</span><span>Buat Baru</span>
+        </a>
+      </div>
+      <div id="notes-list">${loadingBlock('Memuat catatan...')}</div>
     </div>
-  `));
+  `);
+  view.appendChild(wrap);
+
+  const listEl = wrap.querySelector('#notes-list');
+
+  if (!isLoggedIn()) {
+    listEl.innerHTML = `
+      <div class="bg-milk border border-road/10 rounded-2xl p-8 text-center">
+        <p class="text-road/70 mb-4">Anda perlu login untuk melihat catatan.</p>
+        <p class="text-xs text-road/50">Gunakan tombol "Login dengan Google" di atas.</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Fetch
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      const notes = await API.listNotes();
+      renderList(notes);
+    } catch (err) {
+      listEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+    }
+  })();
+
+  function renderList(notes) {
+    if (!notes || notes.length === 0) {
+      listEl.innerHTML = `
+        <div class="bg-milk border border-road/10 rounded-2xl p-10 text-center">
+          <div class="text-5xl mb-3">📭</div>
+          <p class="font-medium mb-1">Belum ada catatan</p>
+          <p class="text-sm text-road/60 mb-5">Mulai dengan merekam catatan pertama Anda.</p>
+          <a href="#/notes/new" class="btn btn-primary inline-flex">
+            <span>🎙️</span><span>Buat Catatan Pertama</span>
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <p class="text-xs text-road/50 mb-3">${notes.length} catatan</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        ${notes.map(noteCard).join('')}
+      </div>
+    `;
+
+    // Pasang event listener untuk tombol hapus
+    listEl.querySelectorAll('[data-delete-id]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = btn.getAttribute('data-delete-id');
+        const title = btn.getAttribute('data-title') || 'Catatan ini';
+        openDeleteConfirm(title, async () => {
+          try {
+            const { API } = await import('./api.js');
+            await API.deleteNote(id);
+            toast('Catatan dihapus');
+            // Refresh
+            const notes = await API.listNotes();
+            renderList(notes);
+          } catch (err) {
+            toast('Gagal menghapus: ' + err.message);
+          }
+        });
+      });
+    });
+  }
+
+  function noteCard(n) {
+    const preview = truncate(n.original_text || '', 140);
+    const dur = n.duration_ms ? fmtDuration(Number(n.duration_ms)) : '-';
+    return `
+      <div class="menu-card group">
+        <a href="#/notes/${encodeURIComponent(n.id)}" class="flex-1 flex flex-col gap-1">
+          <h3 class="font-semibold leading-snug line-clamp-2">${escapeHtml(n.title || 'Tanpa judul')}</h3>
+          <p class="text-xs text-road/60 leading-relaxed line-clamp-3">${escapeHtml(preview)}</p>
+          <div class="flex items-center gap-3 text-[11px] text-road/40 mt-2">
+            <span>📅 ${escapeHtml(fmtDate(n.created_at))}</span>
+            <span>⏱ ${dur}</span>
+          </div>
+        </a>
+        <div class="flex gap-1 pt-2 border-t border-road/5 mt-2">
+          <a href="#/notes/${encodeURIComponent(n.id)}" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">👁 Lihat</a>
+          <a href="#/notes/${encodeURIComponent(n.id)}/edit" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">✏️ Edit</a>
+          <button type="button" data-delete-id="${escapeHtml(n.id)}" data-title="${escapeHtml(n.title)}"
+            class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-stopRed/10 text-stopRed/80">🗑 Hapus</button>
+        </div>
+      </div>
+    `;
+  }
 });
 
-// --- Buat catatan baru ---
+// =====================================================
+// --- BUAT CATATAN BARU (#/notes/new) ---
+// =====================================================
 registerRoute('#/notes/new', (_, view) => {
   view.appendChild(el(`
     <div class="max-w-2xl mx-auto">
@@ -61,7 +195,6 @@ registerRoute('#/notes/new', (_, view) => {
         <p class="text-sm text-road/60 mt-1">Rekam suara Anda, lalu transkripsi otomatis ke teks.</p>
       </div>
 
-      <!-- ============ PANEL REKAMAN UTAMA ============ -->
       <div id="rec-status" class="bg-milk border border-road/10 rounded-2xl p-6 text-center mb-4">
         <div id="rec-visual" class="text-5xl mb-3">🎙️</div>
         <div id="rec-timer" class="text-2xl font-bold tabular-nums text-road/40">00:00</div>
@@ -83,7 +216,6 @@ registerRoute('#/notes/new', (_, view) => {
         </button>
       </div>
 
-      <!-- ============ EDITOR ============ -->
       <div id="editor-area" class="hidden">
         <label class="block text-sm font-medium mb-1">Judul catatan</label>
         <input id="note-title" type="text" placeholder="Contoh: Teknik parkir paralel"
@@ -111,19 +243,15 @@ registerRoute('#/notes/new', (_, view) => {
 
       <div id="rec-error" class="hidden mt-4 p-4 rounded-xl bg-stopRed/10 border border-stopRed/30 text-sm text-stopRed"></div>
 
-      <!-- ============ MODAL TAMBAH REKAM ============ -->
       <div id="append-modal" class="hidden fixed inset-0 z-50 bg-road/50 flex items-center justify-center p-4">
         <div class="bg-milk rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-road/10">
-
           <h3 class="font-bold text-lg mb-1">Tambah Rekam</h3>
           <p class="text-xs text-road/60 mb-4">Hasil akan disisipkan pada posisi kursor</p>
-
           <div class="bg-white border border-road/10 rounded-xl p-4 mb-4">
             <div id="app-rec-visual" class="text-4xl mb-2">🎙️</div>
             <div id="app-rec-timer" class="text-xl font-bold tabular-nums text-road/40">00:00</div>
             <div id="app-rec-hint" class="text-xs text-road/50 mt-1">Siap merekam</div>
           </div>
-
           <div class="flex flex-wrap gap-2 justify-center">
             <button id="app-btn-record" class="btn btn-primary">
               <span>🎙️</span><span>Mulai</span>
@@ -138,7 +266,6 @@ registerRoute('#/notes/new', (_, view) => {
               <span>✖️</span><span>Tutup</span>
             </button>
           </div>
-
           <div id="app-rec-error" class="hidden mt-3 text-xs text-stopRed"></div>
         </div>
       </div>
@@ -146,10 +273,6 @@ registerRoute('#/notes/new', (_, view) => {
     </div>
   `));
 
-  // =====================================================
-  // ELEMEN
-  // =====================================================
-  // Panel rekaman utama
   const btnRecord     = view.querySelector('#btn-record');
   const btnStop       = view.querySelector('#btn-stop');
   const btnCancelRec  = view.querySelector('#btn-cancel-rec');
@@ -157,19 +280,14 @@ registerRoute('#/notes/new', (_, view) => {
   const timerEl       = view.querySelector('#rec-timer');
   const visualEl      = view.querySelector('#rec-visual');
   const hintEl        = view.querySelector('#rec-hint');
-
-  // Editor
   const editorArea    = view.querySelector('#editor-area');
   const btnSave       = view.querySelector('#btn-save');
   const btnAppend     = view.querySelector('#btn-append');
   const btnReset      = view.querySelector('#btn-reset');
   const titleInput    = view.querySelector('#note-title');
   const textInput     = view.querySelector('#note-text');
-
-  // Error box
   const errorBox      = view.querySelector('#rec-error');
 
-  // Modal tambah rekam
   const modal         = view.querySelector('#append-modal');
   const appBtnRecord  = view.querySelector('#app-btn-record');
   const appBtnStop    = view.querySelector('#app-btn-stop');
@@ -180,9 +298,6 @@ registerRoute('#/notes/new', (_, view) => {
   const appHintEl     = view.querySelector('#app-rec-hint');
   const appErrorBox   = view.querySelector('#app-rec-error');
 
-  // =====================================================
-  // STATE
-  // =====================================================
   let recorder = null;
   let currentBlob = null;
   let currentMime = '';
@@ -193,37 +308,14 @@ registerRoute('#/notes/new', (_, view) => {
   let appMime = '';
   let appCursorPos = 0;
 
-  // =====================================================
-  // HELPER
-  // =====================================================
-  function showError(msg) {
-    errorBox.textContent = msg;
-    errorBox.classList.remove('hidden');
-  }
-  function clearError() {
-    errorBox.classList.add('hidden');
-    errorBox.textContent = '';
-  }
-  function showAppError(msg) {
-    appErrorBox.textContent = msg;
-    appErrorBox.classList.remove('hidden');
-  }
-  function clearAppError() {
-    appErrorBox.classList.add('hidden');
-    appErrorBox.textContent = '';
-  }
+  function showError(msg) { errorBox.textContent = msg; errorBox.classList.remove('hidden'); }
+  function clearError() { errorBox.classList.add('hidden'); errorBox.textContent = ''; }
+  function showAppError(msg) { appErrorBox.textContent = msg; appErrorBox.classList.remove('hidden'); }
+  function clearAppError() { appErrorBox.classList.add('hidden'); appErrorBox.textContent = ''; }
 
-  // =====================================================
-  // REKAMAN UTAMA
-  // =====================================================
   btnRecord.addEventListener('click', async () => {
     clearError();
-
-    if (!VoiceRecorder.isSupported()) {
-      showError('Browser Anda tidak mendukung rekaman suara. Gunakan Chrome, Edge, atau Safari terbaru.');
-      return;
-    }
-
+    if (!VoiceRecorder.isSupported()) { showError('Browser Anda tidak mendukung rekaman suara.'); return; }
     try {
       recorder = new VoiceRecorder();
       await recorder.start((ms) => {
@@ -232,14 +324,12 @@ registerRoute('#/notes/new', (_, view) => {
         timerEl.classList.add('text-stopRed');
         visualEl.textContent = (Math.floor(ms / 500) % 2) ? '🔴' : '🎙️';
       });
-
       btnRecord.classList.add('hidden');
       btnStop.classList.remove('hidden');
       btnCancelRec.classList.remove('hidden');
       btnTranscribe.classList.add('hidden');
       editorArea.classList.add('hidden');
       hintEl.textContent = 'Sedang merekam... bicara dengan jelas';
-
     } catch (err) {
       showError('Gagal mengakses mikrofon: ' + err.message);
     }
@@ -252,23 +342,19 @@ registerRoute('#/notes/new', (_, view) => {
       currentBlob = result.blob;
       currentMime = result.mimeType;
       currentDuration = result.durationMs;
-
       if (currentBlob.size > 19 * 1024 * 1024) {
-        showError('Rekaman terlalu besar (' + (currentBlob.size / 1024 / 1024).toFixed(1) + ' MB). Maksimal 19 MB, coba rekam lebih pendek.');
+        showError('Rekaman terlalu besar. Maksimal 19 MB.');
         resetMainButtons();
         return;
       }
-
       visualEl.textContent = '✅';
       hintEl.textContent = 'Rekaman siap diproses (' + fmtDuration(currentDuration) + ')';
       timerEl.classList.add('text-road/40');
       timerEl.classList.remove('text-stopRed');
-
       btnStop.classList.add('hidden');
       btnCancelRec.classList.add('hidden');
       btnTranscribe.classList.remove('hidden');
       btnRecord.classList.add('hidden');
-
     } catch (err) {
       showError('Gagal menghentikan rekaman: ' + err.message);
       resetMainButtons();
@@ -285,22 +371,17 @@ registerRoute('#/notes/new', (_, view) => {
   btnTranscribe.addEventListener('click', async () => {
     clearError();
     if (!currentBlob) return;
-
     btnTranscribe.disabled = true;
     btnTranscribe.innerHTML = '<span>⏳</span><span>Memproses...</span>';
     hintEl.textContent = 'Mengirim audio ke Gemini...';
-
     try {
       const base64 = await blobToBase64(currentBlob);
       const { API } = await import('./api.js');
       const result = await API.transcribe(base64, currentMime);
-
       textInput.value = result.text || '';
       editorArea.classList.remove('hidden');
       hintEl.textContent = 'Transkripsi selesai. Edit teks jika perlu.';
-
       setTimeout(() => editorArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
-
     } catch (err) {
       showError('Transkripsi gagal: ' + err.message);
     } finally {
@@ -321,28 +402,17 @@ registerRoute('#/notes/new', (_, view) => {
     hintEl.textContent = 'Tekan tombol untuk mulai merekam';
   }
 
-  // =====================================================
-  // SIMPAN
-  // =====================================================
   btnSave.addEventListener('click', async () => {
     clearError();
     const title = titleInput.value.trim();
     const text = textInput.value.trim();
-
     if (!title) { showError('Judul catatan tidak boleh kosong.'); return; }
     if (!text)  { showError('Isi catatan tidak boleh kosong.'); return; }
-
     btnSave.disabled = true;
     btnSave.innerHTML = '<span>⏳</span><span>Menyimpan...</span>';
-
     try {
       const { API } = await import('./api.js');
-      await API.saveNote({
-        title,
-        original_text: text,
-        language: 'id-ID',
-        duration_ms: currentDuration
-      });
+      await API.saveNote({ title, original_text: text, language: 'id-ID', duration_ms: currentDuration });
       toast('Catatan berhasil disimpan!');
       location.hash = '#/notes';
     } catch (err) {
@@ -352,40 +422,23 @@ registerRoute('#/notes/new', (_, view) => {
     }
   });
 
-  // =====================================================
-  // BATAL (reset semua)
-  // =====================================================
   btnReset.addEventListener('click', () => {
     if (recorder) recorder.cancel();
     if (appRecorder) appRecorder.cancel();
-    recorder = null;
-    appRecorder = null;
-    currentBlob = null;
-    currentMime = '';
-    currentDuration = 0;
-    appBlob = null;
-    appMime = '';
-    titleInput.value = '';
-    textInput.value = '';
+    recorder = null; appRecorder = null;
+    currentBlob = null; currentMime = ''; currentDuration = 0;
+    appBlob = null; appMime = '';
+    titleInput.value = ''; textInput.value = '';
     editorArea.classList.add('hidden');
     resetMainButtons();
     clearError();
     closeAppendModal();
   });
 
-  // =====================================================
-  // TAMBAH REKAM (Modal)
-  // =====================================================
   btnAppend.addEventListener('click', () => {
-    // Simpan posisi kursor saat ini
     appCursorPos = textInput.selectionStart || textInput.value.length;
-
-    // Reset modal state
-    appBlob = null;
-    appMime = '';
+    appBlob = null; appMime = '';
     resetAppendModal();
-
-    // Tampilkan modal
     modal.classList.remove('hidden');
   });
 
@@ -407,21 +460,12 @@ registerRoute('#/notes/new', (_, view) => {
     resetAppendModal();
   }
 
-  // Klik di luar modal untuk menutup
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeAppendModal();
-  });
-
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeAppendModal(); });
   appBtnClose.addEventListener('click', closeAppendModal);
 
   appBtnRecord.addEventListener('click', async () => {
     clearAppError();
-
-    if (!VoiceRecorder.isSupported()) {
-      showAppError('Browser tidak mendukung rekaman.');
-      return;
-    }
-
+    if (!VoiceRecorder.isSupported()) { showAppError('Browser tidak mendukung rekaman.'); return; }
     try {
       appRecorder = new VoiceRecorder();
       await appRecorder.start((ms) => {
@@ -430,12 +474,10 @@ registerRoute('#/notes/new', (_, view) => {
         appTimerEl.classList.add('text-stopRed');
         appVisualEl.textContent = (Math.floor(ms / 500) % 2) ? '🔴' : '🎙️';
       });
-
       appBtnRecord.classList.add('hidden');
       appBtnStop.classList.remove('hidden');
       appBtnTrans.classList.add('hidden');
       appHintEl.textContent = 'Sedang merekam... bicara dengan jelas';
-
     } catch (err) {
       showAppError('Gagal mengakses mikrofon: ' + err.message);
     }
@@ -447,22 +489,18 @@ registerRoute('#/notes/new', (_, view) => {
       const result = await appRecorder.stop();
       appBlob = result.blob;
       appMime = result.mimeType;
-
       if (appBlob.size > 19 * 1024 * 1024) {
-        showAppError('Rekaman terlalu besar. Coba lebih pendek.');
+        showAppError('Rekaman terlalu besar.');
         resetAppendModal();
         return;
       }
-
       appVisualEl.textContent = '✅';
       appHintEl.textContent = 'Siap disisipkan ke catatan';
       appTimerEl.classList.add('text-road/40');
       appTimerEl.classList.remove('text-stopRed');
-
       appBtnStop.classList.add('hidden');
       appBtnTrans.classList.remove('hidden');
       appBtnRecord.classList.add('hidden');
-
     } catch (err) {
       showAppError('Gagal menghentikan rekaman: ' + err.message);
       resetAppendModal();
@@ -472,20 +510,16 @@ registerRoute('#/notes/new', (_, view) => {
   appBtnTrans.addEventListener('click', async () => {
     clearAppError();
     if (!appBlob) return;
-
     appBtnTrans.disabled = true;
     appBtnTrans.innerHTML = '<span>⏳</span><span>Memproses...</span>';
     appHintEl.textContent = 'Mengirim audio ke Gemini...';
-
     try {
       const base64 = await blobToBase64(appBlob);
       const { API } = await import('./api.js');
       const result = await API.transcribe(base64, appMime);
-
       insertTextAtCursor(result.text || '');
       toast('Teks tambahan disisipkan');
       closeAppendModal();
-
     } catch (err) {
       showAppError('Transkripsi gagal: ' + err.message);
       appBtnTrans.disabled = false;
@@ -493,45 +527,221 @@ registerRoute('#/notes/new', (_, view) => {
     }
   });
 
-  /**
-   * Sisipkan teks di posisi kursor yang tersimpan
-   * Tambahkan spasi/tanda pemisah agar rapi
-   */
   function insertTextAtCursor(text) {
     if (!text) return;
-
     const value = textInput.value;
     const pos = Math.min(appCursorPos, value.length);
-
     const before = value.substring(0, pos);
     const after  = value.substring(pos);
-
-    // Tambah spasi/tanda baca jika perlu
-    let prefix = '';
-    let suffix = '';
+    let prefix = '', suffix = '';
     if (before && !/[\s\n]$/.test(before)) prefix = ' ';
     if (after && !/^[\s\n]/.test(after))   suffix = ' ';
-
     const inserted = prefix + text + suffix;
     textInput.value = before + inserted + after;
-
-    // Pindahkan kursor ke akhir teks yang baru disisipkan
     const newPos = pos + inserted.length;
     textInput.focus();
     textInput.setSelectionRange(newPos, newPos);
     appCursorPos = newPos;
   }
 
-  // =====================================================
-  // CLEANUP
-  // =====================================================
   return () => {
     if (recorder) recorder.cancel();
     if (appRecorder) appRecorder.cancel();
   };
 });
 
+// =====================================================
+// --- DETAIL CATATAN (#/notes/:id) ---
+// =====================================================
+registerRoute('#/notes/:id', (params, view) => {
+  const id = params.id;
+
+  const wrap = el(`
+    <div class="max-w-3xl mx-auto">
+      <a href="#/notes" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
+        <span>←</span><span>Kembali ke Daftar</span>
+      </a>
+      <div id="detail-body">${loadingBlock('Memuat catatan...')}</div>
+    </div>
+  `);
+  view.appendChild(wrap);
+
+  const bodyEl = wrap.querySelector('#detail-body');
+
+  if (!isLoggedIn()) {
+    bodyEl.innerHTML = errorBlock('Anda perlu login untuk melihat catatan ini.');
+    return;
+  }
+
+  let currentNote = null;
+
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      const note = await API.getNote(id);
+      currentNote = note;
+      renderDetail(note);
+    } catch (err) {
+      bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+    }
+  })();
+
+  function renderDetail(n) {
+    const dur = n.duration_ms ? fmtDuration(Number(n.duration_ms)) : '-';
+    bodyEl.innerHTML = `
+      <div class="bg-white border border-road/10 rounded-2xl p-6 mb-4">
+        <h1 class="text-2xl font-bold leading-snug mb-3">${escapeHtml(n.title || 'Tanpa judul')}</h1>
+        <div class="flex flex-wrap items-center gap-3 text-xs text-road/50 mb-5">
+          <span>📅 ${escapeHtml(fmtDate(n.created_at))}</span>
+          <span>⏱ ${dur}</span>
+          <span class="px-2 py-0.5 rounded-full bg-road/5">ID: ${escapeHtml(n.id)}</span>
+        </div>
+        <div class="prose max-w-none text-[15px] leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(n.original_text || '')}</div>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <a href="#/notes/${encodeURIComponent(n.id)}/edit" class="btn btn-primary">
+          <span>✏️</span><span>Edit</span>
+        </a>
+        <button id="btn-delete-detail" class="btn btn-ghost text-stopRed border-stopRed/30">
+          <span>🗑</span><span>Hapus</span>
+        </button>
+      </div>
+    `;
+
+    bodyEl.querySelector('#btn-delete-detail').addEventListener('click', () => {
+      openDeleteConfirm(n.title || 'Catatan ini', async () => {
+        try {
+          const { API } = await import('./api.js');
+          await API.deleteNote(n.id);
+          toast('Catatan dihapus');
+          location.hash = '#/notes';
+        } catch (err) {
+          toast('Gagal menghapus: ' + err.message);
+        }
+      });
+    });
+  }
+});
+
+// =====================================================
+// --- EDIT CATATAN (#/notes/:id/edit) ---
+// =====================================================
+registerRoute('#/notes/:id/edit', (params, view) => {
+  const id = params.id;
+
+  const wrap = el(`
+    <div class="max-w-2xl mx-auto">
+      <a href="#/notes/${encodeURIComponent(id)}" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
+        <span>←</span><span>Kembali ke Detail</span>
+      </a>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">Edit Catatan</h1>
+        <p class="text-sm text-road/60 mt-1">Ubah judul atau isi catatan Anda.</p>
+      </div>
+      <div id="edit-body">${loadingBlock('Memuat catatan...')}</div>
+    </div>
+  `);
+  view.appendChild(wrap);
+
+  const bodyEl = wrap.querySelector('#edit-body');
+
+  if (!isLoggedIn()) {
+    bodyEl.innerHTML = errorBlock('Anda perlu login untuk mengedit catatan.');
+    return;
+  }
+
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      const note = await API.getNote(id);
+      renderEdit(note);
+    } catch (err) {
+      bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+    }
+  })();
+
+  function renderEdit(n) {
+    bodyEl.innerHTML = `
+      <label class="block text-sm font-medium mb-1">Judul catatan</label>
+      <input id="edit-title" type="text" value="${escapeHtml(n.title || '')}"
+        class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
+
+      <label class="block text-sm font-medium mb-1">Isi catatan</label>
+      <textarea id="edit-text" rows="14"
+        class="w-full px-4 py-3 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow font-roboto text-sm leading-relaxed">${escapeHtml(n.original_text || '')}</textarea>
+
+      <div class="flex flex-wrap gap-2">
+        <button id="edit-save" class="btn btn-primary">
+          <span>💾</span><span>Simpan Perubahan</span>
+        </button>
+        <a href="#/notes/${encodeURIComponent(n.id)}" class="btn btn-ghost">
+          <span>✖️</span><span>Batal</span>
+        </a>
+        <button id="edit-delete" class="btn btn-ghost text-stopRed border-stopRed/30 ml-auto">
+          <span>🗑</span><span>Hapus</span>
+        </button>
+      </div>
+
+      <div id="edit-error" class="hidden mt-4 p-4 rounded-xl bg-stopRed/10 border border-stopRed/30 text-sm text-stopRed"></div>
+    `;
+
+    const titleIn = bodyEl.querySelector('#edit-title');
+    const textIn  = bodyEl.querySelector('#edit-text');
+    const btnSave = bodyEl.querySelector('#edit-save');
+    const btnDel  = bodyEl.querySelector('#edit-delete');
+    const errBox  = bodyEl.querySelector('#edit-error');
+
+    function showErr(msg) { errBox.textContent = msg; errBox.classList.remove('hidden'); }
+    function clearErr() { errBox.classList.add('hidden'); errBox.textContent = ''; }
+
+    btnSave.addEventListener('click', async () => {
+      clearErr();
+      const title = titleIn.value.trim();
+      const text  = textIn.value.trim();
+      if (!title) { showErr('Judul tidak boleh kosong.'); return; }
+      if (!text)  { showErr('Isi tidak boleh kosong.'); return; }
+
+      btnSave.disabled = true;
+      btnSave.innerHTML = '<span>⏳</span><span>Menyimpan...</span>';
+
+      try {
+        const { API } = await import('./api.js');
+        await API.saveNote({
+          id: n.id,
+          title,
+          original_text: text,
+          language: n.language || 'id-ID',
+          duration_ms: n.duration_ms || 0,
+          created_at: n.created_at
+        });
+        toast('Perubahan disimpan');
+        location.hash = '#/notes/' + encodeURIComponent(n.id);
+      } catch (err) {
+        showErr('Gagal menyimpan: ' + err.message);
+        btnSave.disabled = false;
+        btnSave.innerHTML = '<span>💾</span><span>Simpan Perubahan</span>';
+      }
+    });
+
+    btnDel.addEventListener('click', () => {
+      openDeleteConfirm(n.title || 'Catatan ini', async () => {
+        try {
+          const { API } = await import('./api.js');
+          await API.deleteNote(n.id);
+          toast('Catatan dihapus');
+          location.hash = '#/notes';
+        } catch (err) {
+          toast('Gagal menghapus: ' + err.message);
+        }
+      });
+    });
+  }
+});
+
+// =====================================================
 // --- Group (placeholder Phase 4) ---
+// =====================================================
 registerRoute('#/groups', (_, view) => {
   view.appendChild(el(`
     <div>
@@ -550,7 +760,9 @@ registerRoute('#/groups/new', (_, view) => {
   `));
 });
 
+// =====================================================
 // --- Slide publik (placeholder Phase 4) ---
+// =====================================================
 registerRoute('#/slide', (_, view) => {
   view.appendChild(el(`
     <div>
@@ -559,6 +771,45 @@ registerRoute('#/slide', (_, view) => {
     </div>
   `));
 });
+
+// =====================================================
+// MODAL KONFIRMASI HAPUS (global)
+// =====================================================
+function openDeleteConfirm(title, onConfirm) {
+  const existing = document.getElementById('global-confirm');
+  if (existing) existing.remove();
+
+  const modal = el(`
+    <div id="global-confirm" class="fixed inset-0 z-[60] bg-road/60 flex items-center justify-center p-4">
+      <div class="bg-milk rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-road/10 text-center">
+        <div class="text-4xl mb-3">🗑</div>
+        <h3 class="font-bold text-lg mb-2">Hapus Catatan?</h3>
+        <p class="text-sm text-road/70 mb-5">
+          Catatan <strong>"${escapeHtml(title)}"</strong> akan dihapus permanen dan tidak bisa dikembalikan.
+        </p>
+        <div class="flex gap-2 justify-center">
+          <button id="gc-cancel" class="btn btn-ghost">
+            <span>✖️</span><span>Batal</span>
+          </button>
+          <button id="gc-yes" class="btn" style="background:#D7263D;color:#fff">
+            <span>🗑</span><span>Ya, Hapus</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  `);
+  document.body.appendChild(modal);
+
+  const close = () => modal.remove();
+
+  modal.querySelector('#gc-cancel').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+  modal.querySelector('#gc-yes').addEventListener('click', async () => {
+    close();
+    await onConfirm();
+  });
+}
 
 // ===================== BOOT =====================
 
