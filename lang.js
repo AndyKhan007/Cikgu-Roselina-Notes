@@ -2221,3 +2221,171 @@ Object.assign(TRANSLATIONS.ru, {
   'Privat': 'Приватный',
   'Gagal memuat catatan': 'Не удалось загрузить заметки'
 });
+
+// =====================================================
+// TAMBAHAN PHASE 4B — Slide Show Publik
+// =====================================================
+Object.assign(TRANSLATIONS.en, {
+  'Slide Publik': 'Public Slides',
+  'Slide publik dari group yang dibagikan.': 'Public slides from shared groups.',
+  'Memuat slide...': 'Loading slides...',
+  'Belum ada slide publik': 'No public slides yet',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'Public slides will appear here once their creators mark groups as public.',
+  'Sebelumnya': 'Previous',
+  'Berikutnya': 'Next',
+  'Auto': 'Auto',
+  'Kembali ke Slide': 'Back to Slides',
+  'Layar penuh': 'Fullscreen',
+  'navigasi': 'navigation'
+});
+
+Object.assign(TRANSLATIONS.ms, {
+  'Slide Publik': 'Slaid Awam',
+  'Slide publik dari group yang dibagikan.': 'Slaid awam daripada kumpulan yang dikongsi.',
+  'Memuat slide...': 'Memuatkan slaid...',
+  'Belum ada slide publik': 'Belum ada slaid awam',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'Slaid awam akan muncul di sini selepas pembuatnya menandakan kumpulan sebagai awam.',
+  'Sebelumnya': 'Sebelumnya',
+  'Berikutnya': 'Seterusnya',
+  'Auto': 'Auto',
+  'Kembali ke Slide': 'Kembali ke Slaid',
+  'Layar penuh': 'Skrin penuh',
+  'navigasi': 'navigasi'
+});
+
+Object.assign(TRANSLATIONS.zh, {
+  'Slide Publik': '公开幻灯片',
+  'Slide publik dari group yang dibagikan.': '来自共享分组的公开幻灯片。',
+  'Memuat slide...': '加载幻灯片中...',
+  'Belum ada slide publik': '还没有公开幻灯片',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    '创建者将分组标记为公开后，幻灯片将显示在此处。',
+  'Sebelumnya': '上一张',
+  'Berikutnya': '下一张',
+  'Auto': '自动',
+  'Kembali ke Slide': '返回幻灯片',
+  'Layar penuh': '全屏',
+  'navigasi': '导航'
+});
+
+Object.assign(TRANSLATIONS.ja, {
+  'Slide Publik': '公開スライド',
+  'Slide publik dari group yang dibagikan.': '共有グループの公開スライド。',
+  'Memuat slide...': 'スライドを読み込み中...',
+  'Belum ada slide publik': '公開スライドはまだありません',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    '作成者がグループを公開に設定すると、スライドがここに表示されます。',
+  'Sebelumnya': '前へ',
+  'Berikutnya': '次へ',
+  'Auto': '自動',
+  'Kembali ke Slide': 'スライドに戻る',
+  'Layar penuh': '全画面',
+  'navigasi': 'ナビ'
+});
+
+Object.assign(TRANSLATIONS.ko, {
+  'Slide Publik': '공개 슬라이드',
+  'Slide publik dari group yang dibagikan.': '공유된 그룹의 공개 슬라이드입니다.',
+  'Memuat slide...': '슬라이드 불러오는 중...',
+  'Belum ada slide publik': '아직 공개 슬라이드가 없습니다',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    '작성자가 그룹을 공개로 표시하면 슬라이드가 여기에 표시됩니다.',
+  'Sebelumnya': '이전',
+  'Berikutnya': '다음',
+  'Auto': '자동',
+  'Kembali ke Slide': '슬라이드로 돌아가기',
+  'Layar penuh': '전체 화면',
+  'navigasi': '탐색'
+});
+
+Object.assign(TRANSLATIONS.hi, {
+  'Slide Publik': 'सार्वजनिक स्लाइड',
+  'Slide publik dari group yang dibagikan.': 'साझा किए गए समूहों की सार्वजनिक स्लाइड।',
+  'Memuat slide...': 'स्लाइड लोड हो रही हैं...',
+  'Belum ada slide publik': 'अभी कोई सार्वजनिक स्लाइड नहीं',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'निर्माता द्वारा समूह को सार्वजनिक के रूप में चिह्नित करने पर स्लाइड यहाँ दिखाई देंगी।',
+  'Sebelumnya': 'पिछला',
+  'Berikutnya': 'अगला',
+  'Auto': 'ऑटो',
+  'Kembali ke Slide': 'स्लाइड पर वापस जाएं',
+  'Layar penuh': 'पूर्ण स्क्रीन',
+  'navigasi': 'नेविगेशन'
+});
+
+Object.assign(TRANSLATIONS.th, {
+  'Slide Publik': 'สไลด์สาธารณะ',
+  'Slide publik dari group yang dibagikan.': 'สไลด์สาธารณะจากกลุ่มที่แชร์',
+  'Memuat slide...': 'กำลังโหลดสไลด์...',
+  'Belum ada slide publik': 'ยังไม่มีสไลด์สาธารณะ',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'สไลด์สาธารณะจะปรากฏที่นี่หลังจากผู้สร้างทำเครื่องหมายกลุ่มเป็นสาธารณะ',
+  'Sebelumnya': 'ก่อนหน้า',
+  'Berikutnya': 'ถัดไป',
+  'Auto': 'อัตโนมัติ',
+  'Kembali ke Slide': 'กลับไปที่สไลด์',
+  'Layar penuh': 'เต็มหน้าจอ',
+  'navigasi': 'นำทาง'
+});
+
+Object.assign(TRANSLATIONS.tl, {
+  'Slide Publik': 'Pampublikong Slide',
+  'Slide publik dari group yang dibagikan.': 'Mga pampublikong slide mula sa mga ibinahaging grupo.',
+  'Memuat slide...': 'Naglo-load ng slide...',
+  'Belum ada slide publik': 'Wala pang pampublikong slide',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'Lalabas ang mga pampublikong slide dito kapag minarkahan ng lumikha ang grupo bilang publiko.',
+  'Sebelumnya': 'Nakaraan',
+  'Berikutnya': 'Susunod',
+  'Auto': 'Auto',
+  'Kembali ke Slide': 'Bumalik sa Slide',
+  'Layar penuh': 'Buong screen',
+  'navigasi': 'navigasyon'
+});
+
+Object.assign(TRANSLATIONS.my, {
+  'Slide Publik': 'အများသူငှာ ဆလိုက်များ',
+  'Slide publik dari group yang dibagikan.': 'မျှဝေထားသော အုပ်စုများမှ အများသူငှာဆလိုက်များ။',
+  'Memuat slide...': 'ဆလိုက်များ ဖွင့်နေသည်...',
+  'Belum ada slide publik': 'အများသူငှာ ဆလိုက်မရှိသေးပါ',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'ဖန်တီးသူမှ အုပ်စုကို အများသူငှာအဖြစ် သတ်မှတ်ပြီးနောက် ဆလိုက်များ ဤနေရာတွင် ပေါ်လာမည်။',
+  'Sebelumnya': 'ယခင်',
+  'Berikutnya': 'နောက်တစ်ခု',
+  'Auto': 'အလိုအလျောက်',
+  'Kembali ke Slide': 'ဆလိုက်သို့ ပြန်ရန်',
+  'Layar penuh': 'မျက်နှာပြင်အပြည့်',
+  'navigasi': 'လမ်းညွှန်'
+});
+
+Object.assign(TRANSLATIONS.vi, {
+  'Slide Publik': 'Trình chiếu công khai',
+  'Slide publik dari group yang dibagikan.': 'Trình chiếu công khai từ các nhóm được chia sẻ.',
+  'Memuat slide...': 'Đang tải trình chiếu...',
+  'Belum ada slide publik': 'Chưa có trình chiếu công khai',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'Trình chiếu công khai sẽ xuất hiện ở đây sau khi người tạo đánh dấu nhóm là công khai.',
+  'Sebelumnya': 'Trước',
+  'Berikutnya': 'Tiếp theo',
+  'Auto': 'Tự động',
+  'Kembali ke Slide': 'Quay lại trình chiếu',
+  'Layar penuh': 'Toàn màn hình',
+  'navigasi': 'điều hướng'
+});
+
+Object.assign(TRANSLATIONS.ru, {
+  'Slide Publik': 'Публичные слайды',
+  'Slide publik dari group yang dibagikan.': 'Публичные слайды из общих групп.',
+  'Memuat slide...': 'Загрузка слайдов...',
+  'Belum ada slide publik': 'Публичных слайдов пока нет',
+  'Slide publik akan muncul di sini setelah pembuatnya menandai group sebagai publik.':
+    'Публичные слайды появятся здесь, как только их создатели отметят группы как публичные.',
+  'Sebelumnya': 'Назад',
+  'Berikutnya': 'Вперёд',
+  'Auto': 'Авто',
+  'Kembali ke Slide': 'Назад к слайдам',
+  'Layar penuh': 'Полный экран',
+  'navigasi': 'навигация'
+});

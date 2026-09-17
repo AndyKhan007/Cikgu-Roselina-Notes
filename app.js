@@ -7,6 +7,8 @@ import { VoiceRecorder, blobToBase64, fmtDuration } from './recorder.js';
 import { t, applyI18n } from './lang.js';
 import { openLangSwitcher } from './lang-switcher.js';
 import { Narrator, waitForVoices, SPEECH_LANG, TRANSLATE_LANGS } from './narrator.js';
+import { mountSlideList } from './slide-list.js';
+import { mountSlideViewer } from './slide-viewer.js';
 
 // ===================== HELPER UMUM =====================
 function escapeHtml(s = '') {
@@ -1084,6 +1086,11 @@ registerRoute('#/groups/:id', (params, view) => {
       </div>
 
       <div class="flex flex-wrap gap-2">
+        ${g.is_public ? `
+          <a href="#/slide/${encodeURIComponent(g.id)}" class="btn btn-primary">
+            <span>🎬</span><span>${t('Mulai Slide')}</span>
+          </a>
+        ` : ''}
         <button id="btn-delete-group" class="btn btn-ghost text-stopRed border-stopRed/30 ml-auto">
           <span>🗑</span><span>${t('Hapus Group')}</span>
         </button>
@@ -1104,19 +1111,18 @@ registerRoute('#/groups/:id', (params, view) => {
 });
 
 // =====================================================
-// SLIDE PUBLIK (placeholder Phase 4B)
+// SLIDE PUBLIK — List + Viewer (Phase 4B)
 // =====================================================
 registerRoute('#/slide', (_, view) => {
-  view.appendChild(el(`
-    <div>
-      <h1 class="text-xl font-bold mb-2">${t('Lihat Slide Note')}</h1>
-      <p class="text-sm text-road/60">${t('Daftar slide publik akan dibangun pada Phase 4B.')}</p>
-    </div>
-  `));
+  mountSlideList(view);
+});
+
+registerRoute('#/slide/:groupId', (params, view) => {
+  return mountSlideViewer(params, view);
 });
 
 // =====================================================
-// MODAL KONFIRMASI HAPUS (global, dengan heading opsional)
+// MODAL KONFIRMASI HAPUS (global)
 // =====================================================
 function openDeleteConfirm(title, onConfirm, customHeading) {
   const existing = document.getElementById('global-confirm');
