@@ -6,9 +6,7 @@ import { startLogoAnimation } from './logo-animation.js';
 import { VoiceRecorder, blobToBase64, fmtDuration } from './recorder.js';
 import { t, applyI18n } from './lang.js';
 import { openLangSwitcher } from './lang-switcher.js';
-import {
-  Narrator, waitForVoices, SPEECH_LANG, TRANSLATE_LANGS
-} from './narrator.js';
+import { Narrator, waitForVoices, SPEECH_LANG, TRANSLATE_LANGS } from './narrator.js';
 
 // ===================== HELPER UMUM =====================
 function escapeHtml(s = '') {
@@ -85,7 +83,6 @@ registerRoute('#/', (_, view) => {
       </div>
     </div>
   `));
-
   view.querySelectorAll('[data-requires-login]').forEach(card => {
     card.addEventListener('click', (e) => {
       if (!isLoggedIn()) { e.preventDefault(); toast(t('Silakan login terlebih dahulu untuk mengakses menu ini')); }
@@ -94,11 +91,10 @@ registerRoute('#/', (_, view) => {
 });
 
 // =====================================================
-// DAFTAR CATATAN (#/notes)
+// DAFTAR CATATAN
 // =====================================================
 registerRoute('#/notes', (_, view) => {
   if (!guardRoute()) return;
-
   const wrap = el(`
     <div>
       <div class="mb-6">
@@ -109,7 +105,6 @@ registerRoute('#/notes', (_, view) => {
     </div>
   `);
   view.appendChild(wrap);
-
   const listEl = wrap.querySelector('#notes-list');
 
   (async () => {
@@ -129,9 +124,7 @@ registerRoute('#/notes', (_, view) => {
           <div class="text-5xl mb-3">📭</div>
           <p class="font-medium mb-1">${t('Belum ada catatan')}</p>
           <p class="text-sm text-road/60 mb-5">${t('Mulai dengan merekam catatan pertama Anda.')}</p>
-          <a href="#/notes/new" class="btn btn-primary inline-flex">
-            <span>🎙️</span><span>${t('Buat Catatan Pertama')}</span>
-          </a>
+          <a href="#/notes/new" class="btn btn-primary inline-flex"><span>🎙️</span><span>${t('Buat Catatan Pertama')}</span></a>
         </div>
       `;
       return;
@@ -186,66 +179,44 @@ registerRoute('#/notes', (_, view) => {
 });
 
 // =====================================================
-// BUAT CATATAN BARU (#/notes/new)
+// BUAT CATATAN BARU
 // =====================================================
 registerRoute('#/notes/new', (_, view) => {
   if (!guardRoute()) return;
-
   view.appendChild(el(`
     <div class="max-w-2xl mx-auto">
       <div class="mb-6">
         <h1 class="text-2xl font-bold">${t('Buat Catatan Baru')}</h1>
         <p class="text-sm text-road/60 mt-1">${t('Rekam suara Anda, lalu transkripsi otomatis ke teks.')}</p>
       </div>
-
       <div id="rec-status" class="bg-milk border border-road/10 rounded-2xl p-6 text-center mb-4">
         <div id="rec-visual" class="text-5xl mb-3">🎙️</div>
         <div id="rec-timer" class="text-2xl font-bold tabular-nums text-road/40">00:00</div>
         <div id="rec-hint" class="text-xs text-road/50 mt-1">${t('Tekan tombol untuk mulai merekam')}</div>
       </div>
-
       <div class="flex flex-wrap gap-2 justify-center mb-6">
-        <button id="btn-record" class="btn btn-primary">
-          <span>🎙️</span><span>${t('Mulai Rekam')}</span>
-        </button>
-        <button id="btn-stop" class="btn btn-ghost hidden">
-          <span>⏹️</span><span>${t('Stop')}</span>
-        </button>
-        <button id="btn-cancel-rec" class="btn btn-ghost hidden">
-          <span>✖️</span><span>${t('Batalkan Rekaman')}</span>
-        </button>
-        <button id="btn-transcribe" class="btn btn-cyan hidden">
-          <span>✨</span><span>${t('Proses Transkripsi')}</span>
-        </button>
+        <button id="btn-record" class="btn btn-primary"><span>🎙️</span><span>${t('Mulai Rekam')}</span></button>
+        <button id="btn-stop" class="btn btn-ghost hidden"><span>⏹️</span><span>${t('Stop')}</span></button>
+        <button id="btn-cancel-rec" class="btn btn-ghost hidden"><span>✖️</span><span>${t('Batalkan Rekaman')}</span></button>
+        <button id="btn-transcribe" class="btn btn-cyan hidden"><span>✨</span><span>${t('Proses Transkripsi')}</span></button>
       </div>
-
       <div id="editor-area" class="hidden">
         <label class="block text-sm font-medium mb-1">${t('Judul catatan')}</label>
         <input id="note-title" type="text" placeholder="${t('Contoh: Teknik parkir paralel')}"
           class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
-
         <label class="block text-sm font-medium mb-1">
           ${t('Isi catatan')}
           <span class="text-xs text-road/40 font-normal">(${t('Hasil akan disisipkan pada posisi kursor')})</span>
         </label>
         <textarea id="note-text" rows="10" placeholder="${t('Hasil transkripsi akan muncul di sini, bisa diedit...')}"
           class="w-full px-4 py-3 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow font-roboto text-sm leading-relaxed"></textarea>
-
         <div class="flex flex-wrap gap-2">
-          <button id="btn-save" class="btn btn-primary">
-            <span>💾</span><span>${t('Simpan Catatan')}</span>
-          </button>
-          <button id="btn-append" class="btn btn-cyan">
-            <span>🎙️</span><span>${t('Tambah Rekam')}</span>
-          </button>
-          <button id="btn-reset" class="btn btn-ghost">
-            <span>✖️</span><span>${t('Batal')}</span>
-          </button>
+          <button id="btn-save" class="btn btn-primary"><span>💾</span><span>${t('Simpan Catatan')}</span></button>
+          <button id="btn-append" class="btn btn-cyan"><span>🎙️</span><span>${t('Tambah Rekam')}</span></button>
+          <button id="btn-reset" class="btn btn-ghost"><span>✖️</span><span>${t('Batal')}</span></button>
         </div>
       </div>
-
       <div id="rec-error" class="hidden mt-4 p-4 rounded-xl bg-stopRed/10 border border-stopRed/30 text-sm text-stopRed"></div>
-
       <div id="append-modal" class="hidden fixed inset-0 z-50 bg-road/50 flex items-center justify-center p-4">
         <div class="bg-milk rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-road/10">
           <h3 class="font-bold text-lg mb-1">${t('Tambah Rekam')}</h3>
@@ -281,7 +252,6 @@ registerRoute('#/notes/new', (_, view) => {
   const titleInput    = view.querySelector('#note-title');
   const textInput     = view.querySelector('#note-text');
   const errorBox      = view.querySelector('#rec-error');
-
   const modal         = view.querySelector('#append-modal');
   const appBtnRecord  = view.querySelector('#app-btn-record');
   const appBtnStop    = view.querySelector('#app-btn-stop');
@@ -509,11 +479,10 @@ registerRoute('#/notes/new', (_, view) => {
 });
 
 // =====================================================
-// DETAIL CATATAN dengan NARATOR + KARAOKE + TRANSLATE
+// DETAIL CATATAN (NARATOR + KARAOKE + TRANSLATE)
 // =====================================================
 registerRoute('#/notes/:id', (params, view) => {
   if (!guardRoute()) return;
-
   const id = params.id;
   const wrap = el(`
     <div class="max-w-3xl mx-auto">
@@ -524,7 +493,6 @@ registerRoute('#/notes/:id', (params, view) => {
     </div>
   `);
   view.appendChild(wrap);
-
   const bodyEl = wrap.querySelector('#detail-body');
 
   const narrator = new Narrator();
@@ -535,7 +503,6 @@ registerRoute('#/notes/:id', (params, view) => {
   let rate = parseFloat(localStorage.getItem('crn_narrator_rate') || '1') || 1;
   if (rate < 0.5 || rate > 2) rate = 1;
 
-  // Muat catatan
   (async () => {
     try {
       const { API } = await import('./api.js');
@@ -543,9 +510,7 @@ registerRoute('#/notes/:id', (params, view) => {
       try { translations = JSON.parse(noteData.translated_json || '{}') || {}; } catch (e) { translations = {}; }
       currentDisplayText = noteData.original_text || '';
       renderPage();
-    } catch (err) {
-      bodyEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/notes');
-    }
+    } catch (err) { bodyEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/notes'); }
   })();
 
   function renderPage() {
@@ -553,7 +518,6 @@ registerRoute('#/notes/:id', (params, view) => {
     const speechSupported = Narrator.isSupported();
 
     bodyEl.innerHTML = `
-      <!-- Info Catatan -->
       <div class="bg-white border border-road/10 rounded-2xl p-6 mb-4">
         <h1 class="text-2xl font-bold leading-snug mb-3">${escapeHtml(noteData.title || t('Judul catatan'))}</h1>
         <div class="flex flex-wrap items-center gap-3 text-xs text-road/50">
@@ -563,70 +527,44 @@ registerRoute('#/notes/:id', (params, view) => {
         </div>
       </div>
 
-      <!-- Panel Narator -->
       <div class="bg-milk border border-road/10 rounded-2xl p-4 mb-4">
         <div class="flex items-center gap-2 mb-3">
           <span class="text-lg">🎙️</span>
           <span class="font-semibold text-sm">${t('Narator')}</span>
           <span id="narr-status" class="text-xs text-road/40 ml-auto"></span>
         </div>
-
         <div class="flex flex-wrap items-center gap-2 mb-3">
-          <button id="btn-play" class="btn btn-primary" ${speechSupported ? '' : 'disabled'}>
-            <span>▶️</span><span>${t('Putar')}</span>
-          </button>
-          <button id="btn-pause" class="btn btn-ghost hidden">
-            <span>⏸</span><span>${t('Jeda')}</span>
-          </button>
-          <button id="btn-resume" class="btn btn-cyan hidden">
-            <span>▶️</span><span>${t('Lanjut')}</span>
-          </button>
-          <button id="btn-stop" class="btn btn-ghost hidden">
-            <span>⏹</span><span>${t('Stop')}</span>
-          </button>
-
+          <button id="btn-play" class="btn btn-primary" ${speechSupported ? '' : 'disabled'}><span>▶️</span><span>${t('Putar')}</span></button>
+          <button id="btn-pause" class="btn btn-ghost hidden"><span>⏸</span><span>${t('Jeda')}</span></button>
+          <button id="btn-resume" class="btn btn-cyan hidden"><span>▶️</span><span>${t('Lanjut')}</span></button>
+          <button id="btn-stop" class="btn btn-ghost hidden"><span>⏹</span><span>${t('Stop')}</span></button>
           <div class="ml-auto flex items-center gap-2">
             <span class="text-xs text-road/60">${t('Kecepatan')}</span>
-            <input id="rate-slider" type="range" min="0.5" max="2" step="0.1" value="${rate}"
-              class="w-24 accent-cyanGlow" />
+            <input id="rate-slider" type="range" min="0.5" max="2" step="0.1" value="${rate}" class="w-24 accent-cyanGlow" />
             <span id="rate-value" class="text-xs font-mono w-10 text-right">${rate.toFixed(1)}x</span>
           </div>
         </div>
-
-        <!-- Panel Translate -->
         <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-road/10">
           <span class="text-xs text-road/60">${t('Bahasa')}:</span>
-          <select id="lang-select"
-            class="text-xs px-3 py-1.5 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
+          <select id="lang-select" class="text-xs px-3 py-1.5 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
             <option value="id">🇮🇩 ${t('Bahasa Indonesia (asli)')}</option>
             ${TRANSLATE_LANGS.map(L => {
               const cached = !!translations[L.code];
               return `<option value="${L.code}">${L.flag} ${L.native}${cached ? ' ✓' : ''}</option>`;
             }).join('')}
           </select>
-          <button id="btn-translate" class="btn btn-cyan text-xs">
-            <span>✨</span><span>${t('Terjemahkan')}</span>
-          </button>
+          <button id="btn-translate" class="btn btn-cyan text-xs"><span>✨</span><span>${t('Terjemahkan')}</span></button>
         </div>
-
         ${!speechSupported ? `<p class="text-xs text-stopRed mt-3">⚠️ ${t('Narator tidak didukung di browser ini')}</p>` : ''}
       </div>
 
-      <!-- Konten Karaoke -->
-      <div id="karaoke-content"
-        class="bg-white border border-road/10 rounded-2xl p-6 mb-4 text-[15px] leading-loose whitespace-pre-wrap break-words"></div>
+      <div id="karaoke-content" class="bg-white border border-road/10 rounded-2xl p-6 mb-4 text-[15px] leading-loose whitespace-pre-wrap break-words"></div>
 
-      <!-- Tombol Edit & Hapus -->
       <div class="flex flex-wrap gap-2">
-        <a href="#/notes/${encodeURIComponent(noteData.id)}/edit" class="btn btn-primary">
-          <span>✏️</span><span>${t('Edit')}</span>
-        </a>
-        <button id="btn-delete-detail" class="btn btn-ghost text-stopRed border-stopRed/30">
-          <span>🗑</span><span>${t('Hapus')}</span>
-        </button>
+        <a href="#/notes/${encodeURIComponent(noteData.id)}/edit" class="btn btn-primary"><span>✏️</span><span>${t('Edit')}</span></a>
+        <button id="btn-delete-detail" class="btn btn-ghost text-stopRed border-stopRed/30"><span>🗑</span><span>${t('Hapus')}</span></button>
       </div>
     `;
-
     setupNarratorControls();
     setupTranslateControls();
     updateKaraokeContent();
@@ -648,7 +586,6 @@ registerRoute('#/notes/:id', (params, view) => {
     const rateVal   = bodyEl.querySelector('#rate-value');
 
     function setUIState(state) {
-      // state: 'idle' | 'playing' | 'paused' | 'stopped' | 'ended' | 'error'
       const show = (el, yes) => el.classList.toggle('hidden', !yes);
       if (state === 'playing') {
         show(btnPlay, false); show(btnPause, true); show(btnResume, false); show(btnStop, true);
@@ -661,22 +598,14 @@ registerRoute('#/notes/:id', (params, view) => {
         statusEl.textContent = state === 'error' ? '⚠️ Error' : (state === 'ended' ? '✓' : '');
       }
     }
-
     narrator.onStateChange = setUIState;
-    narrator.onEnd = () => {};
 
     btnPlay.addEventListener('click', async () => {
       if (!Narrator.isSupported()) { toast(t('Narator tidak didukung di browser ini')); return; }
       if (!currentDisplayText.trim()) { toast(t('Isi tidak boleh kosong.')); return; }
-
-      // Pastikan voices sudah ready
-      const voices = await waitForVoices(1500);
+      await waitForVoices(1500);
       const speechLang = SPEECH_LANG[currentLang] || 'id-ID';
       const voice = narrator.pickBestVoice(speechLang);
-      if (!voice) {
-        // Tetap coba speak dengan default, browser akan pilih voice default
-        console.warn('No matching voice for', speechLang);
-      }
       narrator.speak(currentDisplayText, { lang: speechLang, rate, voice });
     });
 
@@ -691,7 +620,6 @@ registerRoute('#/notes/:id', (params, view) => {
       localStorage.setItem('crn_narrator_rate', String(v));
       narrator.setRate(v);
     });
-
     setUIState('idle');
   }
 
@@ -705,11 +633,9 @@ registerRoute('#/notes/:id', (params, view) => {
         currentLang = 'id';
         currentDisplayText = noteData.original_text || '';
         updateKaraokeContent();
-        // Kalau sedang narasi, restart dari awal
         if (narrator.isPlaying || narrator.isPaused) narrator.stop();
         return;
       }
-      // Kalau sudah ada cache, langsung tampilkan
       if (translations[code]) {
         currentLang = code;
         currentDisplayText = translations[code];
@@ -724,8 +650,6 @@ registerRoute('#/notes/:id', (params, view) => {
     btnTrans.addEventListener('click', async () => {
       const code = langSelect.value;
       if (code === 'id') { toast(t('Kembali ke teks asli')); return; }
-
-      // Cache?
       if (translations[code]) {
         currentLang = code;
         currentDisplayText = translations[code];
@@ -734,42 +658,30 @@ registerRoute('#/notes/:id', (params, view) => {
         toast(t('Terjemahan dimuat dari cache'));
         return;
       }
-
       btnTrans.disabled = true;
       btnTrans.innerHTML = `<span>⏳</span><span>${t('Menerjemahkan...')}</span>`;
-
       try {
         const { API } = await import('./api.js');
         const langInfo = TRANSLATE_LANGS.find(L => L.code === code);
         const promptName = langInfo?.promptName || code;
         const result = await API.translate(noteData.original_text || '', promptName);
-
         translations[code] = result.text;
         currentLang = code;
         currentDisplayText = result.text;
         updateKaraokeContent();
-
-        // Simpan cache ke backend
-        try {
-          await API.updateTranslation(noteData.id, code, result.text);
-        } catch (e) { console.warn('Gagal simpan cache:', e); }
-
-        // Update dropdown untuk tanda ✓
+        try { await API.updateTranslation(noteData.id, code, result.text); } catch (e) { console.warn(e); }
         const opt = langSelect.querySelector(`option[value="${code}"]`);
         if (opt && !opt.textContent.includes('✓')) opt.textContent += ' ✓';
-
         if (narrator.isPlaying || narrator.isPaused) narrator.stop();
         toast(t('Terjemahan selesai'));
-      } catch (err) {
-        toast(t('Terjemahan gagal') + ': ' + err.message);
-      } finally {
+      } catch (err) { toast(t('Terjemahan gagal') + ': ' + err.message); }
+      finally {
         btnTrans.disabled = false;
         btnTrans.innerHTML = `<span>✨</span><span>${t('Terjemahkan')}</span>`;
       }
     });
   }
 
-  // Tombol hapus di halaman detail
   bodyEl.addEventListener('click', (e) => {
     if (e.target.closest('#btn-delete-detail')) {
       openDeleteConfirm(noteData.title || t('Hapus'), async () => {
@@ -784,19 +696,15 @@ registerRoute('#/notes/:id', (params, view) => {
     }
   });
 
-  // Cleanup saat pindah halaman
-  return () => {
-    try { narrator.stop(); } catch (e) {}
-  };
+  return () => { try { narrator.stop(); } catch (e) {} };
 });
 
 // =====================================================
-// EDIT CATATAN (#/notes/:id/edit)
+// EDIT CATATAN
 // =====================================================
 registerRoute('#/notes/:id/edit', (params, view) => {
   if (!guardRoute()) return;
   const id = params.id;
-
   const wrap = el(`
     <div class="max-w-2xl mx-auto">
       <a href="#/notes/${encodeURIComponent(id)}" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
@@ -860,7 +768,7 @@ registerRoute('#/notes/:id/edit', (params, view) => {
           language: n.language || 'id-ID',
           duration_ms: n.duration_ms || 0,
           created_at: n.created_at,
-          translated_json: '' // reset cache karena teks berubah
+          translated_json: ''
         });
         toast(t('Perubahan disimpan'));
         location.hash = '#/notes/' + encodeURIComponent(n.id);
@@ -886,35 +794,331 @@ registerRoute('#/notes/:id/edit', (params, view) => {
 });
 
 // =====================================================
-// Placeholder Group & Slide (Phase 4)
+// GROUP CATATAN — LIST (#/groups)
 // =====================================================
 registerRoute('#/groups', (_, view) => {
   if (!guardRoute()) return;
-  view.appendChild(el(`<div>
-    <h1 class="text-xl font-bold mb-2">${t('Buat Group Catatan')}</h1>
-    <p class="text-sm text-road/60">${t('Fitur grouping akan dibangun pada Phase 4.')}</p>
-  </div>`));
+
+  view.appendChild(el(`
+    <div>
+      <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 class="text-2xl font-bold">${t('Group Catatan Saya')}</h1>
+          <p class="text-sm text-road/60 mt-1">${t('Kumpulan catatan Anda.')}</p>
+        </div>
+        <a href="#/groups/new" class="btn btn-primary">
+          <span>➕</span><span>${t('Buat Group')}</span>
+        </a>
+      </div>
+      <div id="groups-list">${loadingBlock(t('Memuat group...'))}</div>
+    </div>
+  `));
+
+  const listEl = view.querySelector('#groups-list');
+
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      const groups = await API.listGroups();
+      renderGroups(groups);
+    } catch (err) {
+      listEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/groups');
+    }
+  })();
+
+  function renderGroups(groups) {
+    if (!groups || groups.length === 0) {
+      listEl.innerHTML = `
+        <div class="bg-milk border border-road/10 rounded-2xl p-10 text-center">
+          <div class="text-5xl mb-3">🗂️</div>
+          <p class="font-medium mb-1">${t('Belum ada group')}</p>
+          <p class="text-sm text-road/60 mb-5">${t('Gabungkan beberapa catatan menjadi satu group.')}</p>
+          <a href="#/groups/new" class="btn btn-primary inline-flex">
+            <span>➕</span><span>${t('Buat Group Pertama')}</span>
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    listEl.innerHTML = `
+      <p class="text-xs text-road/50 mb-3">${groups.length} group</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        ${groups.map(g => `
+          <div class="menu-card group">
+            <a href="#/groups/${encodeURIComponent(g.id)}" class="flex-1 flex flex-col gap-1">
+              <h3 class="font-semibold leading-snug line-clamp-2">${escapeHtml(g.title || t('Tanpa judul'))}</h3>
+              ${g.description ? `<p class="text-xs text-road/60 line-clamp-2">${escapeHtml(g.description)}</p>` : ''}
+              <div class="flex items-center gap-3 text-[11px] text-road/40 mt-2">
+                <span>📅 ${escapeHtml(fmtDate(g.created_at))}</span>
+                ${g.is_public
+                  ? '<span class="text-goGreen">🌐 ' + t('Publik') + '</span>'
+                  : '<span>🔒 ' + t('Privat') + '</span>'}
+              </div>
+            </a>
+            <div class="flex gap-1 pt-2 border-t border-road/5 mt-2">
+              <a href="#/groups/${encodeURIComponent(g.id)}" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">👁 ${t('Lihat')}</a>
+              <button type="button" data-delete-group="${escapeHtml(g.id)}" data-title="${escapeHtml(g.title)}"
+                class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-stopRed/10 text-stopRed/80">🗑 ${t('Hapus')}</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    listEl.querySelectorAll('[data-delete-group]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        const id = btn.getAttribute('data-delete-group');
+        const title = btn.getAttribute('data-title') || t('Hapus Group');
+        openDeleteConfirm(title, async () => {
+          try {
+            const { API } = await import('./api.js');
+            await API.deleteGroup(id);
+            toast(t('Group berhasil dihapus'));
+            navigate();
+          } catch (err) { toast(t('Gagal menghapus') + ': ' + err.message); }
+        }, t('Hapus Group?'));
+      });
+    });
+  }
 });
 
+// =====================================================
+// BUAT GROUP BARU (#/groups/new)
+// =====================================================
 registerRoute('#/groups/new', (_, view) => {
   if (!guardRoute()) return;
-  view.appendChild(el(`<div>
-    <h1 class="text-xl font-bold mb-2">${t('Buat Group')}</h1>
-    <p class="text-sm text-road/60">${t('Akan dibangun pada Phase 4.')}</p>
-  </div>`));
+
+  view.appendChild(el(`
+    <div class="max-w-2xl mx-auto">
+      <a href="#/groups" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
+        <span>←</span><span>${t('Kembali ke Group')}</span>
+      </a>
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold">${t('Buat Group Baru')}</h1>
+        <p class="text-sm text-road/60 mt-1">${t('Pilih beberapa catatan untuk digabung.')}</p>
+      </div>
+      <div id="group-form">${loadingBlock(t('Memuat catatan...'))}</div>
+    </div>
+  `));
+
+  const formEl = view.querySelector('#group-form');
+  let allNotes = [];
+  let selected = new Set();
+
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      allNotes = await API.listNotes();
+      renderForm();
+    } catch (err) {
+      formEl.innerHTML = errorBlock(t('Gagal memuat catatan') + ': ' + err.message, '#/groups');
+    }
+  })();
+
+  function renderForm() {
+    if (!allNotes || allNotes.length === 0) {
+      formEl.innerHTML = `
+        <div class="bg-milk border border-road/10 rounded-2xl p-8 text-center">
+          <p class="font-medium mb-2">${t('Belum ada catatan untuk dipilih')}</p>
+          <p class="text-sm text-road/60 mb-5">${t('Buat catatan dulu sebelum membuat group.')}</p>
+          <a href="#/notes/new" class="btn btn-primary inline-flex">
+            <span>🎙️</span><span>${t('Buat Catatan')}</span>
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    formEl.innerHTML = `
+      <label class="block text-sm font-medium mb-1">${t('Judul group')}</label>
+      <input id="group-title" type="text" placeholder="${t('Contoh: Dasar-dasar mengemudi')}"
+        class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
+
+      <label class="block text-sm font-medium mb-1">${t('Deskripsi (opsional)')}</label>
+      <textarea id="group-desc" rows="3" placeholder="${t('Deskripsi singkat group ini...')}"
+        class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow text-sm"></textarea>
+
+      <div class="mb-4 p-3 bg-milk rounded-xl border border-road/10">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input id="group-public" type="checkbox" class="w-4 h-4 accent-cyanGlow" />
+          <div>
+            <p class="text-sm font-medium">🌐 ${t('Jadikan publik')}</p>
+            <p class="text-xs text-road/60">${t('Bisa dilihat siapa saja tanpa login')}</p>
+          </div>
+        </label>
+      </div>
+
+      <label class="block text-sm font-medium mb-2">
+        ${t('Pilih catatan')} <span class="text-road/50 font-normal">(${t('minimal 1')})</span>
+      </label>
+      <p class="text-xs text-road/50 mb-2" id="selected-info">0 ${t('catatan')} ${t('dipilih')}</p>
+      <div id="notes-picker" class="bg-white border border-road/15 rounded-xl max-h-96 overflow-y-auto mb-4">
+        ${allNotes.map(n => `
+          <label class="flex items-start gap-3 p-3 border-b border-road/5 last:border-b-0 hover:bg-road/5 cursor-pointer">
+            <input type="checkbox" class="mt-1 w-4 h-4 accent-cyanGlow" data-note-id="${escapeHtml(n.id)}" />
+            <div class="flex-1 min-w-0">
+              <p class="font-medium text-sm line-clamp-1">${escapeHtml(n.title || t('Tanpa judul'))}</p>
+              <p class="text-xs text-road/60 line-clamp-2 mt-0.5">${escapeHtml(truncate(n.original_text || '', 100))}</p>
+            </div>
+          </label>
+        `).join('')}
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button id="group-save" class="btn btn-primary">
+          <span>💾</span><span>${t('Simpan Group')}</span>
+        </button>
+        <a href="#/groups" class="btn btn-ghost">
+          <span>✖️</span><span>${t('Batal')}</span>
+        </a>
+      </div>
+
+      <div id="group-error" class="hidden mt-4 p-4 rounded-xl bg-stopRed/10 border border-stopRed/30 text-sm text-stopRed"></div>
+    `;
+
+    const titleIn = formEl.querySelector('#group-title');
+    const descIn = formEl.querySelector('#group-desc');
+    const publicIn = formEl.querySelector('#group-public');
+    const picker = formEl.querySelector('#notes-picker');
+    const infoEl = formEl.querySelector('#selected-info');
+    const btnSave = formEl.querySelector('#group-save');
+    const errBox = formEl.querySelector('#group-error');
+
+    function showErr(msg) { errBox.textContent = msg; errBox.classList.remove('hidden'); }
+    function clearErr() { errBox.classList.add('hidden'); errBox.textContent = ''; }
+
+    picker.addEventListener('change', (e) => {
+      const cb = e.target.closest('input[type="checkbox"]');
+      if (!cb) return;
+      const nid = cb.getAttribute('data-note-id');
+      if (cb.checked) selected.add(nid);
+      else selected.delete(nid);
+      infoEl.textContent = `${selected.size} ${t('catatan')} ${t('dipilih')}`;
+    });
+
+    btnSave.addEventListener('click', async () => {
+      clearErr();
+      const title = titleIn.value.trim();
+      if (!title) { showErr(t('Judul group tidak boleh kosong')); return; }
+      if (selected.size === 0) { showErr(t('Pilih minimal 1 catatan')); return; }
+
+      btnSave.disabled = true;
+      btnSave.innerHTML = `<span>⏳</span><span>${t('Menyimpan...')}</span>`;
+
+      try {
+        const { API } = await import('./api.js');
+        const items = Array.from(selected).map((nid, idx) => ({ note_id: nid, order: idx }));
+        await API.saveGroup({
+          title: title,
+          description: descIn.value.trim(),
+          is_public: publicIn.checked,
+          items: items
+        });
+        toast(t('Group berhasil disimpan!'));
+        location.hash = '#/groups';
+      } catch (err) {
+        showErr(t('Gagal menyimpan') + ': ' + err.message);
+        btnSave.disabled = false;
+        btnSave.innerHTML = `<span>💾</span><span>${t('Simpan Group')}</span>`;
+      }
+    });
+  }
 });
 
+// =====================================================
+// DETAIL GROUP (#/groups/:id)
+// =====================================================
+registerRoute('#/groups/:id', (params, view) => {
+  if (!guardRoute()) return;
+  const id = params.id;
+
+  view.appendChild(el(`
+    <div class="max-w-3xl mx-auto">
+      <a href="#/groups" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
+        <span>←</span><span>${t('Kembali ke Group')}</span>
+      </a>
+      <div id="group-detail">${loadingBlock()}</div>
+    </div>
+  `));
+  const bodyEl = view.querySelector('#group-detail');
+
+  (async () => {
+    try {
+      const { API } = await import('./api.js');
+      const group = await API.getGroup(id);
+      renderDetail(group);
+    } catch (err) { bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/groups'); }
+  })();
+
+  function renderDetail(g) {
+    bodyEl.innerHTML = `
+      <div class="bg-white border border-road/10 rounded-2xl p-6 mb-4">
+        <div class="flex items-start justify-between gap-3 mb-3 flex-wrap">
+          <h1 class="text-2xl font-bold leading-snug">${escapeHtml(g.title || t('Tanpa judul'))}</h1>
+          ${g.is_public
+            ? '<span class="text-xs px-2 py-1 rounded-full bg-goGreen/10 text-goGreen whitespace-nowrap">🌐 ' + t('Publik') + '</span>'
+            : '<span class="text-xs px-2 py-1 rounded-full bg-road/5 text-road/60 whitespace-nowrap">🔒 ' + t('Privat') + '</span>'}
+        </div>
+        ${g.description ? `<p class="text-sm text-road/70 mb-3">${escapeHtml(g.description)}</p>` : ''}
+        <div class="flex flex-wrap items-center gap-3 text-xs text-road/50">
+          <span>📅 ${escapeHtml(fmtDate(g.created_at))}</span>
+          <span>📒 ${g.items.length} ${t('catatan')}</span>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <h2 class="text-sm font-semibold mb-2 text-road/70">${t('Daftar Catatan')}</h2>
+        <div class="space-y-2">
+          ${g.items.map((it, idx) => `
+            <div class="flex items-start gap-3 bg-white border border-road/10 rounded-xl p-3">
+              <div class="w-7 h-7 rounded-full bg-road/5 flex items-center justify-center text-xs font-semibold flex-shrink-0">${idx + 1}</div>
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-sm">${escapeHtml(it.note.title || t('Tanpa judul'))}</p>
+                <p class="text-xs text-road/60 line-clamp-2 mt-0.5">${escapeHtml(truncate(it.note.original_text || '', 120))}</p>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-delete-group" class="btn btn-ghost text-stopRed border-stopRed/30 ml-auto">
+          <span>🗑</span><span>${t('Hapus Group')}</span>
+        </button>
+      </div>
+    `;
+
+    bodyEl.querySelector('#btn-delete-group').addEventListener('click', () => {
+      openDeleteConfirm(g.title || t('Hapus Group'), async () => {
+        try {
+          const { API } = await import('./api.js');
+          await API.deleteGroup(g.id);
+          toast(t('Group berhasil dihapus'));
+          location.hash = '#/groups';
+        } catch (err) { toast(t('Gagal menghapus') + ': ' + err.message); }
+      }, t('Hapus Group?'));
+    });
+  }
+});
+
+// =====================================================
+// SLIDE PUBLIK (placeholder Phase 4B)
+// =====================================================
 registerRoute('#/slide', (_, view) => {
-  view.appendChild(el(`<div>
-    <h1 class="text-xl font-bold mb-2">${t('Lihat Slide Note')}</h1>
-    <p class="text-sm text-road/60">${t('Daftar slide publik akan dibangun pada Phase 4.')}</p>
-  </div>`));
+  view.appendChild(el(`
+    <div>
+      <h1 class="text-xl font-bold mb-2">${t('Lihat Slide Note')}</h1>
+      <p class="text-sm text-road/60">${t('Daftar slide publik akan dibangun pada Phase 4B.')}</p>
+    </div>
+  `));
 });
 
 // =====================================================
-// MODAL KONFIRMASI HAPUS
+// MODAL KONFIRMASI HAPUS (global, dengan heading opsional)
 // =====================================================
-function openDeleteConfirm(title, onConfirm) {
+function openDeleteConfirm(title, onConfirm, customHeading) {
   const existing = document.getElementById('global-confirm');
   if (existing) existing.remove();
 
@@ -922,7 +1126,7 @@ function openDeleteConfirm(title, onConfirm) {
     <div id="global-confirm" class="fixed inset-0 z-[60] bg-road/60 flex items-center justify-center p-4">
       <div class="bg-milk rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-road/10 text-center">
         <div class="text-4xl mb-3">🗑</div>
-        <h3 class="font-bold text-lg mb-2">${t('Hapus Catatan?')}</h3>
+        <h3 class="font-bold text-lg mb-2">${escapeHtml(customHeading || t('Hapus Catatan?'))}</h3>
         <p class="text-sm text-road/70 mb-5">
           "${escapeHtml(title)}" ${t('akan dihapus permanen dan tidak bisa dikembalikan.')}
         </p>
@@ -961,7 +1165,6 @@ async function boot() {
   if (btnLang) btnLang.addEventListener('click', openLangSwitcher);
 
   initAuth();
-
   document.addEventListener('auth:change', () => { refreshAuthUI(); navigate(); });
   document.addEventListener('lang:change', () => { applyI18n(); refreshAuthUI(); navigate(); });
 
