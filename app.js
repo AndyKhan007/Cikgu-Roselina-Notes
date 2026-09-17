@@ -35,10 +35,6 @@ function errorBlock(msg, retryHash = null) {
   `;
 }
 
-/**
- * Route guard: kalau belum login, redirect ke beranda.
- * Return true kalau boleh lanjut.
- */
 function guardRoute() {
   if (!isLoggedIn()) {
     toast('Silakan login terlebih dahulu');
@@ -50,7 +46,7 @@ function guardRoute() {
 
 // ===================== ROUTES =====================
 
-// --- Menu utama (publik) ---
+// --- Menu utama ---
 registerRoute('#/', (_, view) => {
   const logged = isLoggedIn();
 
@@ -90,7 +86,6 @@ registerRoute('#/', (_, view) => {
     </div>
   `));
 
-  // Intercept klik pada menu terkunci
   view.querySelectorAll('[data-requires-login]').forEach(card => {
     card.addEventListener('click', (e) => {
       if (!isLoggedIn()) {
@@ -834,10 +829,8 @@ async function boot() {
     document.getElementById('app').classList.remove('hidden');
   }, 400);
 
-  // Init auth (tanpa callback)
   initAuth();
 
-  // Dengarkan perubahan status login → refresh halaman
   document.addEventListener('auth:change', () => {
     navigate();
   });

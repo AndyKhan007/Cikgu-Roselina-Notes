@@ -39,7 +39,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   border-color: rgba(0,229,255,0.6);
 }
 
-/* --- Kartu menu terkunci (butuh login) --- */
+/* --- Kartu menu terkunci --- */
 .menu-card-locked {
   opacity: 0.55;
   cursor: not-allowed;
@@ -96,7 +96,7 @@ html, body { font-family: 'Roboto', sans-serif; }
 @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 8px); } to { opacity: 1; transform: translate(-50%, 0); } }
 
 /* =====================================================
-   LAMPU TRAFIK + ANIMASI MOBIL KECIL
+   LAMPU TRAFIK + ANIMASI KENDARAAN
    ===================================================== */
 
 .tl-light {
@@ -127,6 +127,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   z-index: 5;
 }
 
+/* --- Kendaraan (default: ground) --- */
 .cute-car {
   position: absolute;
   bottom: 4px;
@@ -137,11 +138,29 @@ html, body { font-family: 'Roboto', sans-serif; }
   will-change: transform, opacity;
 }
 
+/* --- Kendaraan udara naik lebih tinggi --- */
+.cute-car.air {
+  bottom: 12px;
+}
+
+/* --- Rotor helikopter berputar --- */
+.rotor-spin {
+  animation: rotorSpin 0.12s linear infinite;
+}
+@keyframes rotorSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* --- Mobile: kendaraan lebih kecil --- */
 @media (max-width: 640px) {
   .cute-car {
     width: 32px;
     height: 16px;
     bottom: 3px;
+  }
+  .cute-car.air {
+    bottom: 9px;
   }
 }
 

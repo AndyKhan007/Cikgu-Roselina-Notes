@@ -1,7 +1,9 @@
 // =====================================================
-// Animasi lampu trafik + mobil kecil di navbar
-// Versi 4 — mobile-friendly, tanpa reduce-motion blocker
+// Animasi lampu trafik + kendaraan random di navbar
+// Versi 5 — kendaraan acak + air vehicle support
 // =====================================================
+
+import { randomVehicle } from './vehicles.js';
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -26,7 +28,18 @@ export function startLogoAnimation() {
     });
   }
 
+  function setVehicle(v) {
+    // Ganti isi SVG kendaraan
+    car.innerHTML = v.svg;
+    // Set class 'air' kalau kendaraan terbang
+    car.classList.toggle('air', !!v.air);
+  }
+
   async function loop() {
+    // Pilih kendaraan acak untuk siklus ini
+    const vehicle = randomVehicle();
+    setVehicle(vehicle);
+
     setLight('green');
     await wait(80);
 
@@ -38,10 +51,9 @@ export function startLogoAnimation() {
       return loop();
     }
 
-    // Lebar mobil mengikuti CSS (.cute-car)
     const carWidth = car.offsetWidth || 44;
 
-    // Mobil berhenti tepat 8px di kanan logo
+    // Mobil berhenti 8px di kanan logo
     const stopX  = (logoRect.right - trackRect.left) + 8;
     // Mulai dari luar kanan
     const startX = trackRect.width + carWidth + 20;
@@ -56,31 +68,31 @@ export function startLogoAnimation() {
 
     await wait(50);
 
-    // Durasi jalan: sedikit lebih cepat di mobile
     const isMobile  = window.matchMedia('(max-width: 640px)').matches;
     const driveTime = isMobile ? 1.8 : 2.4;
 
-    // FASE 1: jalan
+    // FASE 1: jalan dari kanan ke titik berhenti
     car.style.transition = `transform ${driveTime}s cubic-bezier(0.25, 0.1, 0.4, 1)`;
     car.style.transform  = `translateX(${stopX}px)`;
 
-    // FASE 2: kuning
+    // FASE 2: kuning saat hampir sampai
     await wait(driveTime * 1000 * 0.70);
     setLight('yellow');
 
-    // FASE 3: merah
+    // FASE 3: merah + glow
     await wait(450);
     setLight('red');
 
-    // FASE 4: berhenti
+    // FASE 4: tunggu mobil benar-benar berhenti
     await wait(driveTime * 1000 * 0.40);
+    // Diam di lampu merah
     await wait(1500);
 
     // FASE 5: hijau lagi
     setLight('green');
     await wait(280);
 
-    // FASE 6: lanjut ke kiri
+    // FASE 6: jalan maju ke kiri & menghilang
     car.style.transition = 'transform 1.2s cubic-bezier(0.4, 0, 0.7, 1)';
     car.style.transform  = `translateX(${exitX}px)`;
 
