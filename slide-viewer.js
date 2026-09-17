@@ -1,6 +1,6 @@
 // =====================================================
 // Slide Viewer — slideshow publik dengan narator + karaoke
-// + Terjemahkan Semua (translate group & anaknya sekaligus)
+// + Terjemahkan Semua (dengan auto-retry 429)
 // =====================================================
 
 import { el, toast } from './ui.js';
@@ -19,8 +19,39 @@ function parseCache(json) {
 
 const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
-// Jeda minimal antar request Gemini (aman di bawah 15 RPM)
-const RATE_LIMIT_MS = 4500;
+// Jeda minimal antar request Gemini (12 RPM, aman di bawah limit 15 RPM)
+const RATE_LIMIT_MS = 5000;
+
+// Deteksi error rate-limit (429 / quota)
+function isRateLimitError(err) {
+  const msg = String(err?.message || err || '').toLowerCase();
+  return msg.includes('429') ||
+         msg.includes('rate') ||
+         msg.includes('quota') ||
+         msg.includes('resource_exhausted') ||
+         msg.includes('too many');
+}
+
+// Terjemahkan satu teks dengan auto-retry jika kena 429
+async function translateWithRetry(API, text, promptName, onRetry) {
+  const MAX_RETRIES = 3;
+  const BACKOFF = [15000, 30000, 60000]; // 15s, 30s, 60s
+
+  let attempt = 0;
+  while (true) {
+    try {
+      return await API.translate(text, promptName);
+    } catch (err) {
+      if (!isRateLimitError(err) || attempt >= MAX_RETRIES) {
+        throw err;
+      }
+      const waitMs = BACKOFF[attempt];
+      attempt++;
+      if (onRetry) onRetry(attempt, MAX_RETRIES, waitMs);
+      await wait(waitMs);
+    }
+  }
+}
 
 export function mountSlideViewer(params, view) {
   const groupId = params.groupId;
@@ -33,7 +64,6 @@ export function mountSlideViewer(params, view) {
   let autoPlay = localStorage.getItem('crn_slide_autoplay') === '1';
   let wasPlayingBeforeChange = false;
 
-  // State translation job
   let translating = false;
   let cancelTranslate = false;
 
@@ -50,7 +80,6 @@ export function mountSlideViewer(params, view) {
   const loadingEl = view.querySelector('#slide-loading');
   const viewerEl  = view.querySelector('#slide-viewer');
 
-  // ============ Keyboard ============
   function onKey(e) {
     if (e.target.matches('input, textarea, select')) return;
     if (e.key === 'ArrowLeft')       { e.preventDefault(); prevSlide(); }
@@ -59,7 +88,6 @@ export function mountSlideViewer(params, view) {
   }
   document.addEventListener('keydown', onKey);
 
-  // ============ Load Group ============
   (async () => {
     try {
       const { API } = await import('./api.js');
@@ -81,7 +109,6 @@ export function mountSlideViewer(params, view) {
     }
   })();
 
-  // ============ Render Viewer ============
   function renderViewer() {
     viewerEl.innerHTML = `
       <div class="flex items-center gap-3 mb-4 flex-wrap">
@@ -127,8 +154,6 @@ export function mountSlideViewer(params, view) {
       </div>
 
       <div class="bg-milk border border-road/10 rounded-xl p-3 mb-3 space-y-3">
-
-        <!-- Baris 1: Bahasa + Terjemahkan Semua -->
         <div class="flex flex-wrap gap-2 items-center justify-center text-sm">
           <span class="text-road/60 text-xs">${t('Bahasa')}:</span>
           <select id="slide-lang" class="text-xs px-2 py-1 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
@@ -140,7 +165,6 @@ export function mountSlideViewer(params, view) {
           </button>
         </div>
 
-        <!-- Progress bar translate -->
         <div id="slide-translate-progress" class="hidden">
           <div class="flex items-center gap-2 text-xs text-road/70 mb-1">
             <span id="translate-progress-label" class="truncate">${t('Menerjemahkan...')}</span>
@@ -151,7 +175,6 @@ export function mountSlideViewer(params, view) {
           </div>
         </div>
 
-        <!-- Baris 2: Kecepatan + Auto + Fullscreen -->
         <div class="flex flex-wrap gap-3 items-center justify-center text-sm pt-2 border-t border-road/5">
           <div class="flex items-center gap-2">
             <span class="text-road/60 text-xs">${t('Kecepatan')}:</span>
@@ -178,7 +201,6 @@ export function mountSlideViewer(params, view) {
     bindControls();
   }
 
-  // ============ Bind Controls ============
   function bindControls() {
     viewerEl.querySelector('#slide-prev').addEventListener('click', prevSlide);
     viewerEl.querySelector('#slide-next').addEventListener('click', nextSlide);
@@ -227,7 +249,6 @@ export function mountSlideViewer(params, view) {
     updateTranslateButton();
   }
 
-  // ============ Helpers ============
   function getItem() { return group.items[currentIndex]; }
 
   function getText(item) {
@@ -277,7 +298,6 @@ export function mountSlideViewer(params, view) {
     }
   }
 
-  // ============ Render Slide ============
   function renderSlide() {
     const item = getItem();
     const note = item.note;
@@ -297,7 +317,6 @@ export function mountSlideViewer(params, view) {
     viewerEl.querySelector('#slide-prev').disabled = currentIndex === 0;
     viewerEl.querySelector('#slide-next').disabled = currentIndex === group.items.length - 1;
 
-    // Indikator status terjemahan
     const statusEl = viewerEl.querySelector('#slide-trans-status');
     if (statusEl) {
       if (selectedLang === 'id') {
@@ -320,7 +339,6 @@ export function mountSlideViewer(params, view) {
     updateTranslateButton();
   }
 
-  // ============ Narration ============
   async function startPlay() {
     if (!Narrator.isSupported()) { toast(t('Narator tidak didukung di browser ini')); return; }
     const item = getItem();
@@ -355,7 +373,6 @@ export function mountSlideViewer(params, view) {
     }
   }
 
-  // ============ Navigation ============
   function prevSlide() {
     if (currentIndex === 0) return;
     wasPlayingBeforeChange = narrator.isPlaying || narrator.isPaused;
@@ -377,7 +394,7 @@ export function mountSlideViewer(params, view) {
     renderSlide();
   }
 
-  // ============ Translate All (group + semua anak) ============
+  // ============ Translate All ============
   async function translateAll() {
     if (selectedLang === 'id') { toast(t('Pilih bahasa dulu')); return; }
     if (translating) return;
@@ -398,7 +415,6 @@ export function mountSlideViewer(params, view) {
     );
     if (!ok) return;
 
-    // Setup UI
     translating = true;
     cancelTranslate = false;
     const progEl = viewerEl.querySelector('#slide-translate-progress');
@@ -406,9 +422,7 @@ export function mountSlideViewer(params, view) {
     const progBar = viewerEl.querySelector('#translate-progress-bar');
     progEl.classList.remove('hidden');
     progBar.style.width = '0%';
-    progLabel.textContent = t('Menerjemahkan...');
 
-    // Disable controls
     const btnAll = viewerEl.querySelector('#slide-translate-all');
     const langSel = viewerEl.querySelector('#slide-lang');
     btnAll.disabled = true;
@@ -426,22 +440,36 @@ export function mountSlideViewer(params, view) {
       if (cancelTranslate) break;
 
       const title = item.note.title || t('Tanpa judul');
+
+      // Jeda dinamis antar request agar tidak kena 429
+      if (lastRequestAt > 0) {
+        const elapsed = Date.now() - lastRequestAt;
+        const waitFor = Math.max(0, RATE_LIMIT_MS - elapsed);
+        if (waitFor > 0) {
+          progLabel.textContent = `${i + 1}/${untranslated.length} · ${title} · ${Math.ceil(waitFor/1000)}s`;
+          const step = 100;
+          for (let w = 0; w < waitFor; w += step) {
+            if (cancelTranslate) break;
+            await wait(Math.min(step, waitFor - w));
+          }
+          if (cancelTranslate) break;
+        }
+      }
+
       progLabel.textContent = `${i + 1}/${untranslated.length} · ${title}`;
       progBar.style.width = `${(i / untranslated.length) * 100}%`;
 
       try {
-        // Rate limit dinamis: kalau request sebelumnya cepat, kita jeda; kalau lambat, tidak perlu jeda
-        if (lastRequestAt > 0) {
-          const elapsed = Date.now() - lastRequestAt;
-          const waitFor = Math.max(0, RATE_LIMIT_MS - elapsed);
-          if (waitFor > 0) {
-            await wait(waitFor);
-            if (cancelTranslate) break;
+        const result = await translateWithRetry(
+          API,
+          item.note.original_text || '',
+          promptName,
+          (attempt, max, waitMs) => {
+            progLabel.textContent =
+              `${i + 1}/${untranslated.length} · ${title} · ` +
+              `${t('Rate limit, mencoba lagi')} ${attempt}/${max} (${Math.round(waitMs/1000)}s)`;
           }
-        }
-
-        const start = Date.now();
-        const result = await API.translate(item.note.original_text || '', promptName);
+        );
         lastRequestAt = Date.now();
 
         try { await API.updateTranslation(item.note.id, selectedLang, result.text); }
@@ -453,7 +481,6 @@ export function mountSlideViewer(params, view) {
 
         success++;
 
-        // Kalau item ini yang sedang ditampilkan, refresh slide
         if (item === getItem()) {
           const wasPlaying = narrator.isPlaying || narrator.isPaused;
           if (wasPlaying) narrator.stop();
@@ -468,7 +495,6 @@ export function mountSlideViewer(params, view) {
       progBar.style.width = `${(i / untranslated.length) * 100}%`;
     }
 
-    // Cleanup UI
     progEl.classList.add('hidden');
     translating = false;
     btnAll.disabled = false;
@@ -486,7 +512,6 @@ export function mountSlideViewer(params, view) {
     }
   }
 
-  // ============ Confirm Dialog ============
   function showConfirm(title, message) {
     return new Promise((resolve) => {
       const overlay = el(`
@@ -511,7 +536,6 @@ export function mountSlideViewer(params, view) {
     });
   }
 
-  // ============ Fullscreen ============
   function toggleFullscreen() {
     const target = viewerEl.querySelector('#slide-area');
     if (!document.fullscreenElement) {
@@ -521,7 +545,6 @@ export function mountSlideViewer(params, view) {
     }
   }
 
-  // ============ Cleanup ============
   return () => {
     cancelTranslate = true;
     document.removeEventListener('keydown', onKey);

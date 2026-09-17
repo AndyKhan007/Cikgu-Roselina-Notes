@@ -2557,3 +2557,51 @@ Object.assign(TRANSLATIONS.ru, {
   'berhasil': 'успешно',
   'gagal': 'ошибок'
 });
+
+// =====================================================
+// TAMBAHAN — Retry 429 & Progress
+// =====================================================
+Object.assign(TRANSLATIONS.en, {
+  'Rate limit, mencoba lagi': 'Rate limit, retrying',
+  'Terlalu banyak permintaan': 'Too many requests'
+});
+Object.assign(TRANSLATIONS.ms, {
+  'Rate limit, mencoba lagi': 'Had kadar, cuba lagi',
+  'Terlalu banyak permintaan': 'Terlalu banyak permintaan'
+});
+Object.assign(TRANSLATIONS.zh, {
+  'Rate limit, mencoba lagi': '速率限制，正在重试',
+  'Terlalu banyak permintaan': '请求过多'
+});
+Object.assign(TRANSLATIONS.ja, {
+  'Rate limit, mencoba lagi': 'レート制限、再試行中',
+  'Terlalu banyak permintaan': 'リクエストが多すぎます'
+});
+Object.assign(TRANSLATIONS.ko, {
+  'Rate limit, mencoba lagi': '속도 제한, 재시도 중',
+  'Terlalu banyak permintaan': '요청이 너무 많습니다'
+});
+Object.assign(TRANSLATIONS.hi, {
+  'Rate limit, mencoba lagi': 'दर सीमा, पुनः प्रयास',
+  'Terlalu banyak permintaan': 'बहुत अधिक अनुरोध'
+});
+Object.assign(TRANSLATIONS.th, {
+  'Rate limit, mencoba lagi': 'จำกัดอัตรา กำลังลองใหม่',
+  'Terlalu banyak permintaan': 'คำขอมากเกินไป'
+});
+Object.assign(TRANSLATIONS.tl, {
+  'Rate limit, mencoba lagi': 'Rate limit, sinusubukan muli',
+  'Terlalu banyak permintaan': 'Masyadong maraming kahilingan'
+});
+Object.assign(TRANSLATIONS.my, {
+  'Rate limit, mencoba lagi': 'နှုန်းကန့်သတ်၊ ထပ်စမ်းနေသည်',
+  'Terlalu banyak permintaan': 'တောင်းဆိုမှု များလွန်းသည်'
+});
+Object.assign(TRANSLATIONS.vi, {
+  'Rate limit, mencoba lagi': 'Giới hạn tốc độ, đang thử lại',
+  'Terlalu banyak permintaan': 'Quá nhiều yêu cầu'
+});
+Object.assign(TRANSLATIONS.ru, {
+  'Rate limit, mencoba lagi': 'Лимит скорости, повтор',
+  'Terlalu banyak permintaan': 'Слишком много запросов'
+});
