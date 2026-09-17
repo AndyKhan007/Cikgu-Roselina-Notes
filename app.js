@@ -821,9 +821,8 @@ function openDeleteConfirm(title, onConfirm) {
 // ===================== BOOT =====================
 
 async function boot() {
-  document.getElementById('year').textContent = new Date().getFullYear();
-
   // Terapkan i18n ke elemen HTML statis (header, footer, loading)
+  // Footer & loading screen pakai data-i18n, jadi tidak perlu set manual.
   applyI18n();
 
   await playLoadingAnimation('#loading-sign');
@@ -836,7 +835,8 @@ async function boot() {
   }, 400);
 
   // Tombol ganti bahasa
-  document.getElementById('btn-lang').addEventListener('click', openLangSwitcher);
+  const btnLang = document.getElementById('btn-lang');
+  if (btnLang) btnLang.addEventListener('click', openLangSwitcher);
 
   initAuth();
 
