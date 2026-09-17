@@ -1,3 +1,8 @@
+/* =====================================================
+   Cikgu Roselina Notes — Style Sheet
+   Semua style aplikasi dalam satu file
+   ===================================================== */
+
 /* ====== Dasar ====== */
 html, body { font-family: 'Roboto', sans-serif; }
 * { -webkit-tap-highlight-color: transparent; }
@@ -39,7 +44,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   border-color: rgba(0,229,255,0.6);
 }
 
-/* --- Kartu menu terkunci --- */
+/* --- Kartu menu terkunci (butuh login) --- */
 .menu-card-locked {
   opacity: 0.55;
   cursor: not-allowed;
@@ -58,16 +63,52 @@ html, body { font-family: 'Roboto', sans-serif; }
   opacity: 0.85;
 }
 
-/* ====== Karaoke highlight ====== */
+/* =====================================================
+   KARAOKE HIGHLIGHT (v2)
+   ===================================================== */
 .karaoke-word {
-  transition: all .15s ease;
-  padding: 0 .1em;
-  border-radius: .25em;
+  display: inline;
+  padding: 0.05em 0.15em;
+  margin: 0 0.02em;
+  border-radius: 0.3em;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+  position: relative;
 }
+
+/* Kata yang sudah dibaca — tetap subtle */
+.karaoke-word.read {
+  color: rgba(43, 43, 43, 0.55);
+}
+
+/* Kata yang sedang dibaca — efek karaoke dramatis */
 .karaoke-word.active {
   background: #00E5FF;
   color: #000;
-  box-shadow: 0 0 12px #00E5FF, 0 0 24px rgba(0,229,255,0.6);
+  font-weight: 600;
+  box-shadow:
+    0 0 8px #00E5FF,
+    0 0 16px rgba(0, 229, 255, 0.7),
+    0 0 32px rgba(0, 229, 255, 0.4);
+  transform: scale(1.06);
+  z-index: 1;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .karaoke-word,
+  .karaoke-word.active {
+    transition: background-color 0.05s, color 0.05s;
+    transform: none;
+    box-shadow: none;
+  }
+  .karaoke-word.active {
+    background: #00E5FF;
+    color: #000;
+  }
 }
 
 /* ====== Tombol utama ====== */
@@ -99,6 +140,7 @@ html, body { font-family: 'Roboto', sans-serif; }
    LAMPU TRAFIK + ANIMASI KENDARAAN
    ===================================================== */
 
+/* --- Lampu trafik --- */
 .tl-light {
   transition: fill 0.25s ease, filter 0.25s ease;
 }
@@ -126,7 +168,7 @@ html, body { font-family: 'Roboto', sans-serif; }
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 30;
+  z-index: 20;
 }
 
 /* --- Kendaraan (default: ground) --- */
@@ -145,7 +187,6 @@ html, body { font-family: 'Roboto', sans-serif; }
 /* --- Kendaraan udara naik lebih tinggi --- */
 .cute-car.air {
   bottom: 14px;
-  z-index: 30;
 }
 
 /* --- Rotor helikopter berputar --- */
@@ -181,4 +222,42 @@ html, body { font-family: 'Roboto', sans-serif; }
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* =====================================================
+   SCROLLBAR (opsional, agar konsisten di desktop)
+   ===================================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(43,43,43,0.03);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(43,43,43,0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(43,43,43,0.35);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(43,43,43,0.2) transparent;
+}
+
+/* =====================================================
+   PRINT (opsional — untuk export catatan nanti)
+   ===================================================== */
+@media print {
+  header, footer, #toast, .car-track,
+  #btn-lang, #auth-area,
+  .btn, #slide-prev, #slide-next,
+  #slide-play, #slide-pause, #slide-stop {
+    display: none !important;
+  }
+  body { background: #fff; }
 }
