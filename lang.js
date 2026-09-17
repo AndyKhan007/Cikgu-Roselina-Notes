@@ -2,7 +2,6 @@
 // Sistem i18n — semua teks manusia terpusat di sini
 // Bahasa default: Indonesia ('id')
 // Kunci = teks Indonesia. Terjemahan untuk bahasa lain dipetakan.
-// Tambah bahasa baru: cukup tambah entry di LANGS & TRANSLATIONS.
 // =====================================================
 
 export const LANGS = [
@@ -152,7 +151,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'Search language...',
     'Bahasa tidak ditemukan': 'Language not found',
     'Bahasa berhasil diubah': 'Language changed successfully',
-    'Bahasa': 'Language'
+    'Bahasa': 'Language',
+
+    // --- Narrator & Translate ---
+    'Narator': 'Narrator',
+    'Putar': 'Play',
+    'Jeda': 'Pause',
+    'Lanjut': 'Resume',
+    'Kecepatan': 'Speed',
+    'Asli': 'Original',
+    'Tampilkan': 'Show',
+    'Terjemahkan': 'Translate',
+    'Menerjemahkan...': 'Translating...',
+    'Terjemahan selesai': 'Translation done',
+    'Terjemahan gagal': 'Translation failed',
+    'Narator tidak didukung di browser ini': 'Narrator not supported in this browser',
+    'Suara tidak tersedia untuk bahasa ini': 'Voice not available for this language',
+    'Memuat suara...': 'Loading voices...',
+    'Kembali ke teks asli': 'Back to original text',
+    'Pilih bahasa terjemahan': 'Choose translation language',
+    'Bahasa Indonesia (asli)': 'Indonesian (original)',
+    'Versi terjemahan': 'Translated version',
+    'Sedang membaca...': 'Reading...',
+    'Berhenti': 'Stopped',
+    'Terjemahan dimuat dari cache': 'Translation loaded from cache'
   },
 
   // ============================================================
@@ -285,11 +307,34 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'Cari bahasa...',
     'Bahasa tidak ditemukan': 'Bahasa tidak dijumpai',
     'Bahasa berhasil diubah': 'Bahasa berjaya diubah',
-    'Bahasa': 'Bahasa'
+    'Bahasa': 'Bahasa',
+
+    // --- Narrator & Translate ---
+    'Narator': 'Pembaca',
+    'Putar': 'Main',
+    'Jeda': 'Jeda',
+    'Lanjut': 'Sambung',
+    'Kecepatan': 'Kelajuan',
+    'Asli': 'Asal',
+    'Tampilkan': 'Papar',
+    'Terjemahkan': 'Terjemah',
+    'Menerjemahkan...': 'Menterjemah...',
+    'Terjemahan selesai': 'Terjemahan selesai',
+    'Terjemahan gagal': 'Terjemahan gagal',
+    'Narator tidak didukung di browser ini': 'Pembaca tidak disokong dalam pelayar ini',
+    'Suara tidak tersedia untuk bahasa ini': 'Suara tidak tersedia untuk bahasa ini',
+    'Memuat suara...': 'Memuatkan suara...',
+    'Kembali ke teks asli': 'Kembali ke teks asal',
+    'Pilih bahasa terjemahan': 'Pilih bahasa terjemahan',
+    'Bahasa Indonesia (asli)': 'Bahasa Indonesia (asal)',
+    'Versi terjemahan': 'Versi terjemahan',
+    'Sedang membaca...': 'Sedang membaca...',
+    'Berhenti': 'Berhenti',
+    'Terjemahan dimuat dari cache': 'Terjemahan dimuat dari cache'
   },
 
   // ============================================================
-  // CHINESE (MANDARIN)
+  // CHINESE
   // ============================================================
   zh: {
     'Menu': '菜单',
@@ -412,7 +457,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': '搜索语言...',
     'Bahasa tidak ditemukan': '未找到语言',
     'Bahasa berhasil diubah': '语言切换成功',
-    'Bahasa': '语言'
+    'Bahasa': '语言',
+
+    // --- Narrator & Translate ---
+    'Narator': '朗读器',
+    'Putar': '播放',
+    'Jeda': '暂停',
+    'Lanjut': '继续',
+    'Kecepatan': '速度',
+    'Asli': '原文',
+    'Tampilkan': '显示',
+    'Terjemahkan': '翻译',
+    'Menerjemahkan...': '翻译中...',
+    'Terjemahan selesai': '翻译完成',
+    'Terjemahan gagal': '翻译失败',
+    'Narator tidak didukung di browser ini': '此浏览器不支持朗读',
+    'Suara tidak tersedia untuk bahasa ini': '此语言没有可用的语音',
+    'Memuat suara...': '加载语音中...',
+    'Kembali ke teks asli': '返回原文',
+    'Pilih bahasa terjemahan': '选择翻译语言',
+    'Bahasa Indonesia (asli)': '印尼语（原文）',
+    'Versi terjemahan': '翻译版本',
+    'Sedang membaca...': '正在朗读...',
+    'Berhenti': '已停止',
+    'Terjemahan dimuat dari cache': '翻译已从缓存加载'
   },
 
   // ============================================================
@@ -546,7 +614,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': '言語を検索...',
     'Bahasa tidak ditemukan': '言語が見つかりません',
     'Bahasa berhasil diubah': '言語を変更しました',
-    'Bahasa': '言語'
+    'Bahasa': '言語',
+
+    // --- Narrator & Translate ---
+    'Narator': 'ナレーター',
+    'Putar': '再生',
+    'Jeda': '一時停止',
+    'Lanjut': '再開',
+    'Kecepatan': '速度',
+    'Asli': '原文',
+    'Tampilkan': '表示',
+    'Terjemahkan': '翻訳',
+    'Menerjemahkan...': '翻訳中...',
+    'Terjemahan selesai': '翻訳完了',
+    'Terjemahan gagal': '翻訳失敗',
+    'Narator tidak didukung di browser ini': 'このブラウザは読み上げをサポートしていません',
+    'Suara tidak tersedia untuk bahasa ini': 'この言語の音声は利用できません',
+    'Memuat suara...': '音声を読み込み中...',
+    'Kembali ke teks asli': '原文に戻る',
+    'Pilih bahasa terjemahan': '翻訳言語を選択',
+    'Bahasa Indonesia (asli)': 'インドネシア語（原文）',
+    'Versi terjemahan': '翻訳版',
+    'Sedang membaca...': '読み上げ中...',
+    'Berhenti': '停止しました',
+    'Terjemahan dimuat dari cache': 'キャッシュから翻訳を読み込みました'
   },
 
   // ============================================================
@@ -679,7 +770,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': '언어 검색...',
     'Bahasa tidak ditemukan': '언어를 찾을 수 없습니다',
     'Bahasa berhasil diubah': '언어가 변경되었습니다',
-    'Bahasa': '언어'
+    'Bahasa': '언어',
+
+    // --- Narrator & Translate ---
+    'Narator': '낭독기',
+    'Putar': '재생',
+    'Jeda': '일시정지',
+    'Lanjut': '계속',
+    'Kecepatan': '속도',
+    'Asli': '원문',
+    'Tampilkan': '표시',
+    'Terjemahkan': '번역',
+    'Menerjemahkan...': '번역 중...',
+    'Terjemahan selesai': '번역 완료',
+    'Terjemahan gagal': '번역 실패',
+    'Narator tidak didukung di browser ini': '이 브라우저는 낭독을 지원하지 않습니다',
+    'Suara tidak tersedia untuk bahasa ini': '이 언어의 음성을 사용할 수 없습니다',
+    'Memuat suara...': '음성 로드 중...',
+    'Kembali ke teks asli': '원문으로 돌아가기',
+    'Pilih bahasa terjemahan': '번역 언어 선택',
+    'Bahasa Indonesia (asli)': '인도네시아어 (원문)',
+    'Versi terjemahan': '번역 버전',
+    'Sedang membaca...': '읽는 중...',
+    'Berhenti': '중지됨',
+    'Terjemahan dimuat dari cache': '캐시에서 번역을 로드했습니다'
   },
 
   // ============================================================
@@ -815,7 +929,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'भाषा खोजें...',
     'Bahasa tidak ditemukan': 'भाषा नहीं मिली',
     'Bahasa berhasil diubah': 'भाषा सफलतापूर्वक बदली गई',
-    'Bahasa': 'भाषा'
+    'Bahasa': 'भाषा',
+
+    // --- Narrator & Translate ---
+    'Narator': 'वाचक',
+    'Putar': 'चलाएं',
+    'Jeda': 'रोकें',
+    'Lanjut': 'जारी रखें',
+    'Kecepatan': 'गति',
+    'Asli': 'मूल',
+    'Tampilkan': 'दिखाएं',
+    'Terjemahkan': 'अनुवाद करें',
+    'Menerjemahkan...': 'अनुवाद हो रहा है...',
+    'Terjemahan selesai': 'अनुवाद पूरा',
+    'Terjemahan gagal': 'अनुवाद विफल',
+    'Narator tidak didukung di browser ini': 'इस ब्राउज़र में वाचक समर्थित नहीं है',
+    'Suara tidak tersedia untuk bahasa ini': 'इस भाषा के लिए आवाज़ उपलब्ध नहीं है',
+    'Memuat suara...': 'आवाज़ लोड हो रही है...',
+    'Kembali ke teks asli': 'मूल पाठ पर वापस जाएं',
+    'Pilih bahasa terjemahan': 'अनुवाद भाषा चुनें',
+    'Bahasa Indonesia (asli)': 'इंडोनेशियाई (मूल)',
+    'Versi terjemahan': 'अनुवादित संस्करण',
+    'Sedang membaca...': 'पढ़ रहा है...',
+    'Berhenti': 'रुका हुआ',
+    'Terjemahan dimuat dari cache': 'अनुवाद कैश से लोड किया गया'
   },
 
   // ============================================================
@@ -949,7 +1086,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'ค้นหาภาษา...',
     'Bahasa tidak ditemukan': 'ไม่พบภาษา',
     'Bahasa berhasil diubah': 'เปลี่ยนภาษาสำเร็จ',
-    'Bahasa': 'ภาษา'
+    'Bahasa': 'ภาษา',
+
+    // --- Narrator & Translate ---
+    'Narator': 'นักอ่าน',
+    'Putar': 'เล่น',
+    'Jeda': 'หยุดชั่วคราว',
+    'Lanjut': 'ดำเนินการต่อ',
+    'Kecepatan': 'ความเร็ว',
+    'Asli': 'ต้นฉบับ',
+    'Tampilkan': 'แสดง',
+    'Terjemahkan': 'แปล',
+    'Menerjemahkan...': 'กำลังแปล...',
+    'Terjemahan selesai': 'แปลเสร็จแล้ว',
+    'Terjemahan gagal': 'แปลไม่สำเร็จ',
+    'Narator tidak didukung di browser ini': 'เบราว์เซอร์นี้ไม่รองรับการอ่านออกเสียง',
+    'Suara tidak tersedia untuk bahasa ini': 'ไม่มีเสียงสำหรับภาษานี้',
+    'Memuat suara...': 'กำลังโหลดเสียง...',
+    'Kembali ke teks asli': 'กลับไปที่ข้อความต้นฉบับ',
+    'Pilih bahasa terjemahan': 'เลือกภาษาที่จะแปล',
+    'Bahasa Indonesia (asli)': 'ภาษาอินโดนีเซีย (ต้นฉบับ)',
+    'Versi terjemahan': 'เวอร์ชันแปล',
+    'Sedang membaca...': 'กำลังอ่าน...',
+    'Berhenti': 'หยุดแล้ว',
+    'Terjemahan dimuat dari cache': 'โหลดการแปลจากแคช'
   },
 
   // ============================================================
@@ -1085,11 +1245,34 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'Maghanap ng wika...',
     'Bahasa tidak ditemukan': 'Hindi mahanap ang wika',
     'Bahasa berhasil diubah': 'Matagumpay na nabago ang wika',
-    'Bahasa': 'Wika'
+    'Bahasa': 'Wika',
+
+    // --- Narrator & Translate ---
+    'Narator': 'Tagapagsalita',
+    'Putar': 'I-play',
+    'Jeda': 'I-pause',
+    'Lanjut': 'Ituloy',
+    'Kecepatan': 'Bilis',
+    'Asli': 'Orihinal',
+    'Tampilkan': 'Ipakita',
+    'Terjemahkan': 'Isalin',
+    'Menerjemahkan...': 'Nagsasalin...',
+    'Terjemahan selesai': 'Tapos na ang pagsasalin',
+    'Terjemahan gagal': 'Nabigong magsalin',
+    'Narator tidak didukung di browser ini': 'Hindi sinusuportahan ng browser na ito ang narator',
+    'Suara tidak tersedia untuk bahasa ini': 'Walang available na boses para sa wikang ito',
+    'Memuat suara...': 'Naglo-load ng boses...',
+    'Kembali ke teks asli': 'Bumalik sa orihinal na teksto',
+    'Pilih bahasa terjemahan': 'Pumili ng wikang isasalin',
+    'Bahasa Indonesia (asli)': 'Indonesian (orihinal)',
+    'Versi terjemahan': 'Bersyong isinalin',
+    'Sedang membaca...': 'Nagbabasa...',
+    'Berhenti': 'Nakahinto',
+    'Terjemahan dimuat dari cache': 'Na-load ang salin mula sa cache'
   },
 
   // ============================================================
-  // BURMESE (MYANMAR)
+  // BURMESE
   // ============================================================
   my: {
     'Menu': 'မီနူး',
@@ -1227,7 +1410,30 @@ const TRANSLATIONS = {
     'Bahasa tidak ditemukan': 'ဘာသာစကားမတွေ့ပါ',
     'Bahasa berhasil diubah':
       'ဘာသာစကား အောင်မြင်စွာပြောင်းပြီးပါပြီ',
-    'Bahasa': 'ဘာသာစကား'
+    'Bahasa': 'ဘာသာစကား',
+
+    // --- Narrator & Translate ---
+    'Narator': 'ဖတ်ပြသူ',
+    'Putar': 'ဖွင့်ရန်',
+    'Jeda': 'ခေတ္တရပ်ရန်',
+    'Lanjut': 'ဆက်ရန်',
+    'Kecepatan': 'အမြန်နှုန်း',
+    'Asli': 'မူရင်း',
+    'Tampilkan': 'ပြသရန်',
+    'Terjemahkan': 'ဘာသာပြန်ရန်',
+    'Menerjemahkan...': 'ဘာသာပြန်နေသည်...',
+    'Terjemahan selesai': 'ဘာသာပြန်ပြီးပါပြီ',
+    'Terjemahan gagal': 'ဘာသာပြန်၍မရပါ',
+    'Narator tidak didukung di browser ini': 'ဤဘရောက်ဇာသည် ဖတ်ပြခြင်းကို မထောက်ပံ့ပါ',
+    'Suara tidak tersedia untuk bahasa ini': 'ဤဘာသာစကားအတွက် အသံမရနိုင်ပါ',
+    'Memuat suara...': 'အသံဖွင့်နေသည်...',
+    'Kembali ke teks asli': 'မူရင်းစာသားသို့ ပြန်ရန်',
+    'Pilih bahasa terjemahan': 'ဘာသာပြန်မည့်ဘာသာစကား ရွေးပါ',
+    'Bahasa Indonesia (asli)': 'အင်ဒိုနီးရှားဘာသာ (မူရင်း)',
+    'Versi terjemahan': 'ဘာသာပြန်ဗားရှင်း',
+    'Sedang membaca...': 'ဖတ်နေသည်...',
+    'Berhenti': 'ရပ်ပြီးပါပြီ',
+    'Terjemahan dimuat dari cache': 'ဘာသာပြန်ကို cache မှ ဖွင့်ပြီးပါပြီ'
   },
 
   // ============================================================
@@ -1364,7 +1570,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'Tìm ngôn ngữ...',
     'Bahasa tidak ditemukan': 'Không tìm thấy ngôn ngữ',
     'Bahasa berhasil diubah': 'Đổi ngôn ngữ thành công',
-    'Bahasa': 'Ngôn ngữ'
+    'Bahasa': 'Ngôn ngữ',
+
+    // --- Narrator & Translate ---
+    'Narator': 'Trình đọc',
+    'Putar': 'Phát',
+    'Jeda': 'Tạm dừng',
+    'Lanjut': 'Tiếp tục',
+    'Kecepatan': 'Tốc độ',
+    'Asli': 'Gốc',
+    'Tampilkan': 'Hiển thị',
+    'Terjemahkan': 'Dịch',
+    'Menerjemahkan...': 'Đang dịch...',
+    'Terjemahan selesai': 'Dịch xong',
+    'Terjemahan gagal': 'Dịch thất bại',
+    'Narator tidak didukung di browser ini': 'Trình duyệt này không hỗ trợ trình đọc',
+    'Suara tidak tersedia untuk bahasa ini': 'Không có giọng nói cho ngôn ngữ này',
+    'Memuat suara...': 'Đang tải giọng nói...',
+    'Kembali ke teks asli': 'Quay lại văn bản gốc',
+    'Pilih bahasa terjemahan': 'Chọn ngôn ngữ dịch',
+    'Bahasa Indonesia (asli)': 'Tiếng Indonesia (gốc)',
+    'Versi terjemahan': 'Bản dịch',
+    'Sedang membaca...': 'Đang đọc...',
+    'Berhenti': 'Đã dừng',
+    'Terjemahan dimuat dari cache': 'Đã tải bản dịch từ bộ nhớ đệm'
   },
 
   // ============================================================
@@ -1502,7 +1731,30 @@ const TRANSLATIONS = {
     'Cari bahasa...': 'Поиск языка...',
     'Bahasa tidak ditemukan': 'Язык не найден',
     'Bahasa berhasil diubah': 'Язык успешно изменён',
-    'Bahasa': 'Язык'
+    'Bahasa': 'Язык',
+
+    // --- Narrator & Translate ---
+    'Narator': 'Диктор',
+    'Putar': 'Воспроизвести',
+    'Jeda': 'Пауза',
+    'Lanjut': 'Продолжить',
+    'Kecepatan': 'Скорость',
+    'Asli': 'Оригинал',
+    'Tampilkan': 'Показать',
+    'Terjemahkan': 'Перевести',
+    'Menerjemahkan...': 'Перевод...',
+    'Terjemahan selesai': 'Перевод завершён',
+    'Terjemahan gagal': 'Ошибка перевода',
+    'Narator tidak didukung di browser ini': 'Этот браузер не поддерживает озвучивание',
+    'Suara tidak tersedia untuk bahasa ini': 'Голос для этого языка недоступен',
+    'Memuat suara...': 'Загрузка голосов...',
+    'Kembali ke teks asli': 'Вернуться к оригиналу',
+    'Pilih bahasa terjemahan': 'Выберите язык перевода',
+    'Bahasa Indonesia (asli)': 'Индонезийский (оригинал)',
+    'Versi terjemahan': 'Перевод',
+    'Sedang membaca...': 'Чтение...',
+    'Berhenti': 'Остановлено',
+    'Terjemahan dimuat dari cache': 'Перевод загружен из кэша'
   }
 };
 
