@@ -119,28 +119,32 @@ html, body { font-family: 'Roboto', sans-serif; }
   filter: drop-shadow(0 0 4px #34d058) drop-shadow(0 0 10px #34d058);
 }
 
+/* --- Jalur kendaraan --- */
+/* z-index 20 = DI ATAS teks header (z-10) supaya kendaraan tidak tertutup */
 .car-track {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
-  z-index: 5;
+  z-index: 20;
 }
 
 /* --- Kendaraan (default: ground) --- */
+/* Ukuran = 3/4 tinggi lampu trafik (36px × 3/4 = 27px) */
+/* Rasio 2:1 → 54px × 27px */
 .cute-car {
   position: absolute;
   bottom: 4px;
   left: 0;
-  width: 44px;
-  height: 22px;
+  width: 54px;
+  height: 27px;
   opacity: 0;
   will-change: transform, opacity;
 }
 
 /* --- Kendaraan udara naik lebih tinggi --- */
 .cute-car.air {
-  bottom: 12px;
+  bottom: 14px;
 }
 
 /* --- Rotor helikopter berputar --- */
@@ -152,15 +156,15 @@ html, body { font-family: 'Roboto', sans-serif; }
   to   { transform: rotate(360deg); }
 }
 
-/* --- Mobile: kendaraan lebih kecil --- */
+/* --- Mobile: kendaraan diskalakan proporsional --- */
 @media (max-width: 640px) {
   .cute-car {
-    width: 32px;
-    height: 16px;
+    width: 40px;
+    height: 20px;
     bottom: 3px;
   }
   .cute-car.air {
-    bottom: 9px;
+    bottom: 11px;
   }
 }
 
