@@ -36,27 +36,23 @@
   <!-- ===================== LOADING ===================== -->
   <div id="loading-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-milk">
     <div id="loading-sign" class="w-32 h-32 flex items-center justify-center"></div>
-    <p class="mt-6 text-sm tracking-widest text-road/60">MEMUAT...</p>
+    <p class="mt-6 text-sm tracking-widest text-road/60" data-i18n="MEMUAT...">MEMUAT...</p>
     <p class="mt-1 text-xs text-road/40">Cikgu Roselina Notes</p>
   </div>
 
   <!-- ===================== APP ===================== -->
   <div id="app" class="hidden min-h-screen flex flex-col">
 
-    <!-- HEADER (overflow-hidden dihapus agar dropdown profil tidak terpotong) -->
+    <!-- HEADER -->
     <header class="bg-milk border-b border-road/10 sticky top-0 z-30 relative">
 
-      <!-- Lapisan animasi kendaraan -->
       <div id="carTrack" class="car-track" aria-hidden="true">
-        <div id="cuteCar" class="cute-car">
-          <!-- SVG diisi oleh JS -->
-        </div>
+        <div id="cuteCar" class="cute-car"></div>
       </div>
 
-      <!-- Konten header -->
       <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between relative z-10">
 
-        <!-- LOGO + LAMPU TRAFIK -->
+        <!-- LOGO -->
         <a href="#/" class="flex items-center gap-2 shrink-0">
           <div class="w-9 h-9 flex items-center justify-center" id="logoTraffic" aria-label="Lampu lalu lintas">
             <svg viewBox="0 0 26 50" class="w-7 h-9">
@@ -74,14 +70,22 @@
         </a>
 
         <nav class="hidden md:flex items-center gap-1 text-sm">
-          <a href="#/" class="nav-link">Menu</a>
-          <a href="#/notes" class="nav-link">Catatan</a>
-          <a href="#/groups" class="nav-link">Group</a>
-          <a href="#/slide" class="nav-link">Slide</a>
+          <a href="#/" class="nav-link" data-i18n="Menu">Menu</a>
+          <a href="#/notes" class="nav-link" data-i18n="Catatan">Catatan</a>
+          <a href="#/groups" class="nav-link" data-i18n="Group">Group</a>
+          <a href="#/slide" class="nav-link" data-i18n="Slide">Slide</a>
         </nav>
 
-        <div id="auth-area" class="flex items-center gap-2 shrink-0">
-          <!-- diisi oleh auth.js -->
+        <div class="flex items-center gap-1 shrink-0">
+          <!-- Tombol ganti bahasa -->
+          <button id="btn-lang" type="button" title="Language"
+            class="w-9 h-9 flex items-center justify-center rounded-full hover:bg-road/5 transition text-lg">
+            🌐
+          </button>
+
+          <div id="auth-area" class="flex items-center gap-2">
+            <!-- diisi oleh auth.js -->
+          </div>
         </div>
       </div>
     </header>
@@ -91,7 +95,7 @@
 
     <!-- FOOTER -->
     <footer class="border-t border-road/10 py-4 text-center text-xs text-road/50">
-      © <span id="year"></span> Cikgu Roselina Notes · Aplikasi catatan sekolah mengemudi
+      <span data-i18n="© 2026 Cikgu Roselina Notes · Aplikasi catatan sekolah mengemudi">© 2026 Cikgu Roselina Notes · Aplikasi catatan sekolah mengemudi</span>
     </footer>
   </div>
 

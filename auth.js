@@ -1,5 +1,6 @@
 import { CONFIG } from './config.js';
 import { toast } from './ui.js';
+import { t } from './lang.js';
 
 let currentUser = null;
 
@@ -9,7 +10,6 @@ export function isLoggedIn() { return !!currentUser; }
 export function initAuth() {
   const area = document.getElementById('auth-area');
 
-  // Restore session
   const saved = sessionStorage.getItem('crn_user');
   if (saved) {
     try {
@@ -32,7 +32,6 @@ export function initAuth() {
   };
   tryInit();
 
-  // Global close handler untuk dropdown profil
   document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('user-dropdown');
     if (!dropdown || dropdown.classList.contains('hidden')) return;
@@ -88,7 +87,6 @@ function renderUserChip(area) {
         <span class="hidden sm:inline text-[9px] text-road/50">▼</span>
       </button>
 
-      <!-- Dropdown menu -->
       <div id="user-dropdown"
         class="hidden absolute right-0 top-full mt-1 bg-white border border-road/10 rounded-xl shadow-xl py-1 min-w-[200px] z-[100]">
         <div class="px-3 py-2 border-b border-road/5">
@@ -97,7 +95,7 @@ function renderUserChip(area) {
         </div>
         <button id="btn-logout" type="button"
           class="w-full text-left px-3 py-2 text-sm hover:bg-stopRed/10 text-stopRed flex items-center gap-2 transition">
-          <span>🚪</span><span>Keluar</span>
+          <span>🚪</span><span>${t('Keluar')}</span>
         </button>
       </div>
     </div>
@@ -118,36 +116,36 @@ function renderUserChip(area) {
   });
 }
 
-export function logout() {
-  // 1. Bersihkan state internal
-  currentUser = null;
+export function refreshAuthUI() {
+  const area = document.getElementById('auth-area');
+  if (!area) return;
+  if (currentUser) renderUserChip(area);
+  else renderLoginButton(area);
+}
 
-  // 2. Bersihkan semua storage yang mungkin berisi data login
+export function logout() {
+  currentUser = null;
   try { sessionStorage.removeItem('crn_user'); } catch (e) {}
   try { sessionStorage.clear(); } catch (e) {}
   try { localStorage.removeItem('crn_user'); } catch (e) {}
   try { localStorage.removeItem('crn_notes_cache'); } catch (e) {}
   try { localStorage.removeItem('crn_groups_cache'); } catch (e) {}
   try { localStorage.removeItem('crn_settings'); } catch (e) {}
-
-  // 3. Matikan Google Auto Select
   try { window.google?.accounts?.id?.disableAutoSelect?.(); } catch (e) {}
 
-  // 4. Reset tampilan area auth
   const area = document.getElementById('auth-area');
   if (area) {
     area.innerHTML = '';
     renderLoginButton(area);
   }
 
-  // 5. Beritahu aplikasi
   document.dispatchEvent(new CustomEvent('auth:change', { detail: null }));
-  toast('Anda telah keluar');
+  toast(t('Anda telah keluar'));
 }
 
 export function requireLogin() {
   if (!isLoggedIn()) {
-    toast('Silakan login terlebih dahulu');
+    toast(t('Silakan login terlebih dahulu'));
     location.hash = '#/';
     return false;
   }

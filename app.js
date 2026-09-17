@@ -1,9 +1,11 @@
 import { CONFIG } from './config.js';
-import { initAuth, getUser, isLoggedIn } from './auth.js';
+import { initAuth, getUser, isLoggedIn, refreshAuthUI } from './auth.js';
 import { registerRoute, startRouter, navigate } from './router.js';
 import { el, toast, playLoadingAnimation, fmtDate } from './ui.js';
 import { startLogoAnimation } from './logo-animation.js';
 import { VoiceRecorder, blobToBase64, fmtDuration } from './recorder.js';
+import { t, applyI18n } from './lang.js';
+import { openLangSwitcher } from './lang-switcher.js';
 
 // ===================== HELPER UMUM =====================
 function escapeHtml(s = '') {
@@ -17,11 +19,11 @@ function truncate(s = '', n = 160) {
   return s.length > n ? s.substring(0, n).trim() + '…' : s;
 }
 
-function loadingBlock(text = 'Memuat...') {
+function loadingBlock(text = null) {
   return `
     <div class="text-center py-20 text-road/50">
       <div class="inline-block w-8 h-8 border-4 border-road/10 border-t-cyanGlow rounded-full animate-spin mb-3"></div>
-      <p class="text-sm">${text}</p>
+      <p class="text-sm">${text || t('Memuat catatan...')}</p>
     </div>
   `;
 }
@@ -30,14 +32,14 @@ function errorBlock(msg, retryHash = null) {
   return `
     <div class="bg-stopRed/10 border border-stopRed/30 rounded-2xl p-6 text-center">
       <p class="text-stopRed font-medium mb-3">⚠️ ${escapeHtml(msg)}</p>
-      ${retryHash ? `<a href="${retryHash}" class="btn btn-ghost inline-flex">🔄 Coba Lagi</a>` : ''}
+      ${retryHash ? `<a href="${retryHash}" class="btn btn-ghost inline-flex">🔄 ${t('Coba Lagi')}</a>` : ''}
     </div>
   `;
 }
 
 function guardRoute() {
   if (!isLoggedIn()) {
-    toast('Silakan login terlebih dahulu');
+    toast(t('Silakan login terlebih dahulu'));
     location.hash = '#/';
     return false;
   }
@@ -53,34 +55,34 @@ registerRoute('#/', (_, view) => {
   view.appendChild(el(`
     <div>
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Selamat datang${logged ? ', ' + getUser().name.split(' ')[0] : ''} 👋</h1>
+        <h1 class="text-2xl font-bold">${t('Selamat datang')}${logged ? ', ' + getUser().name.split(' ')[0] : ''} 👋</h1>
         <p class="text-road/60 text-sm mt-1">
           ${logged
-            ? 'Pilih menu untuk mulai membuat catatan mengemudi.'
-            : 'Silakan login untuk mengakses menu bertanda 🔒.'}
+            ? t('Pilih menu untuk mulai membuat catatan mengemudi.')
+            : t('Silakan login untuk mengakses menu bertanda 🔒.')}
         </p>
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="menu-grid">
         <a href="#/notes/new" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">🎙️</span>
-          <span class="font-semibold">Buat Catatan</span>
-          <span class="text-xs text-road/60">Rekam suara, otomatis jadi teks. Perlu login.</span>
+          <span class="font-semibold">${t('Buat Catatan')}</span>
+          <span class="text-xs text-road/60">${t('Rekam suara, otomatis jadi teks. Perlu login.')}</span>
         </a>
         <a href="#/groups/new" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">🗂️</span>
-          <span class="font-semibold">Buat Group Catatan</span>
-          <span class="text-xs text-road/60">Gabung beberapa catatan. Perlu login.</span>
+          <span class="font-semibold">${t('Buat Group Catatan')}</span>
+          <span class="text-xs text-road/60">${t('Gabung beberapa catatan. Perlu login.')}</span>
         </a>
         <a href="#/slide" class="menu-card">
           <span class="text-2xl">🎬</span>
-          <span class="font-semibold">Lihat Slide Note</span>
-          <span class="text-xs text-road/60">Tampilkan slide catatan. Bisa diakses siapa saja.</span>
+          <span class="font-semibold">${t('Lihat Slide Note')}</span>
+          <span class="text-xs text-road/60">${t('Tampilkan slide catatan. Bisa diakses siapa saja.')}</span>
         </a>
         <a href="#/notes" class="menu-card ${logged ? '' : 'menu-card-locked'}" data-requires-login="true">
           <span class="text-2xl">📒</span>
-          <span class="font-semibold">Catatan Saya</span>
-          <span class="text-xs text-road/60">Daftar catatan yang Anda buat. Perlu login.</span>
+          <span class="font-semibold">${t('Catatan Saya')}</span>
+          <span class="text-xs text-road/60">${t('Daftar catatan yang Anda buat. Perlu login.')}</span>
         </a>
       </div>
     </div>
@@ -90,7 +92,7 @@ registerRoute('#/', (_, view) => {
     card.addEventListener('click', (e) => {
       if (!isLoggedIn()) {
         e.preventDefault();
-        toast('Silakan login terlebih dahulu untuk mengakses menu ini');
+        toast(t('Silakan login terlebih dahulu untuk mengakses menu ini'));
       }
     });
   });
@@ -105,10 +107,10 @@ registerRoute('#/notes', (_, view) => {
   const wrap = el(`
     <div>
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Catatan Saya</h1>
-        <p class="text-sm text-road/60 mt-1">Semua catatan yang Anda buat.</p>
+        <h1 class="text-2xl font-bold">${t('Catatan Saya')}</h1>
+        <p class="text-sm text-road/60 mt-1">${t('Semua catatan yang Anda buat.')}</p>
       </div>
-      <div id="notes-list">${loadingBlock('Memuat catatan...')}</div>
+      <div id="notes-list">${loadingBlock()}</div>
     </div>
   `);
   view.appendChild(wrap);
@@ -121,7 +123,7 @@ registerRoute('#/notes', (_, view) => {
       const notes = await API.listNotes();
       renderList(notes);
     } catch (err) {
-      listEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+      listEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/notes');
     }
   })();
 
@@ -130,10 +132,10 @@ registerRoute('#/notes', (_, view) => {
       listEl.innerHTML = `
         <div class="bg-milk border border-road/10 rounded-2xl p-10 text-center">
           <div class="text-5xl mb-3">📭</div>
-          <p class="font-medium mb-1">Belum ada catatan</p>
-          <p class="text-sm text-road/60 mb-5">Mulai dengan merekam catatan pertama Anda.</p>
+          <p class="font-medium mb-1">${t('Belum ada catatan')}</p>
+          <p class="text-sm text-road/60 mb-5">${t('Mulai dengan merekam catatan pertama Anda.')}</p>
           <a href="#/notes/new" class="btn btn-primary inline-flex">
-            <span>🎙️</span><span>Buat Catatan Pertama</span>
+            <span>🎙️</span><span>${t('Buat Catatan Pertama')}</span>
           </a>
         </div>
       `;
@@ -141,7 +143,7 @@ registerRoute('#/notes', (_, view) => {
     }
 
     listEl.innerHTML = `
-      <p class="text-xs text-road/50 mb-3">${notes.length} catatan</p>
+      <p class="text-xs text-road/50 mb-3">${notes.length} ${t('catatan')}</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         ${notes.map(noteCard).join('')}
       </div>
@@ -152,16 +154,15 @@ registerRoute('#/notes', (_, view) => {
         e.preventDefault();
         e.stopPropagation();
         const id = btn.getAttribute('data-delete-id');
-        const title = btn.getAttribute('data-title') || 'Catatan ini';
+        const title = btn.getAttribute('data-title') || t('Hapus');
         openDeleteConfirm(title, async () => {
           try {
             const { API } = await import('./api.js');
             await API.deleteNote(id);
-            toast('Catatan dihapus');
-            // Refresh halaman: navigate() akan re-run route #/notes dan fetch data fresh
+            toast(t('Catatan dihapus'));
             navigate();
           } catch (err) {
-            toast('Gagal menghapus: ' + err.message);
+            toast(t('Gagal menghapus') + ': ' + err.message);
           }
         });
       });
@@ -174,7 +175,7 @@ registerRoute('#/notes', (_, view) => {
     return `
       <div class="menu-card group">
         <a href="#/notes/${encodeURIComponent(n.id)}" class="flex-1 flex flex-col gap-1">
-          <h3 class="font-semibold leading-snug line-clamp-2">${escapeHtml(n.title || 'Tanpa judul')}</h3>
+          <h3 class="font-semibold leading-snug line-clamp-2">${escapeHtml(n.title || t('Judul catatan'))}</h3>
           <p class="text-xs text-road/60 leading-relaxed line-clamp-3">${escapeHtml(preview)}</p>
           <div class="flex items-center gap-3 text-[11px] text-road/40 mt-2">
             <span>📅 ${escapeHtml(fmtDate(n.created_at))}</span>
@@ -182,10 +183,10 @@ registerRoute('#/notes', (_, view) => {
           </div>
         </a>
         <div class="flex gap-1 pt-2 border-t border-road/5 mt-2">
-          <a href="#/notes/${encodeURIComponent(n.id)}" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">👁 Lihat</a>
-          <a href="#/notes/${encodeURIComponent(n.id)}/edit" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">✏️ Edit</a>
+          <a href="#/notes/${encodeURIComponent(n.id)}" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">👁 ${t('Lihat')}</a>
+          <a href="#/notes/${encodeURIComponent(n.id)}/edit" class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-road/5 text-road/70">✏️ ${t('Edit')}</a>
           <button type="button" data-delete-id="${escapeHtml(n.id)}" data-title="${escapeHtml(n.title)}"
-            class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-stopRed/10 text-stopRed/80">🗑 Hapus</button>
+            class="flex-1 text-center text-xs py-1.5 rounded-lg hover:bg-stopRed/10 text-stopRed/80">🗑 ${t('Hapus')}</button>
         </div>
       </div>
     `;
@@ -202,52 +203,52 @@ registerRoute('#/notes/new', (_, view) => {
     <div class="max-w-2xl mx-auto">
 
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Buat Catatan Baru</h1>
-        <p class="text-sm text-road/60 mt-1">Rekam suara Anda, lalu transkripsi otomatis ke teks.</p>
+        <h1 class="text-2xl font-bold">${t('Buat Catatan Baru')}</h1>
+        <p class="text-sm text-road/60 mt-1">${t('Rekam suara Anda, lalu transkripsi otomatis ke teks.')}</p>
       </div>
 
       <div id="rec-status" class="bg-milk border border-road/10 rounded-2xl p-6 text-center mb-4">
         <div id="rec-visual" class="text-5xl mb-3">🎙️</div>
         <div id="rec-timer" class="text-2xl font-bold tabular-nums text-road/40">00:00</div>
-        <div id="rec-hint" class="text-xs text-road/50 mt-1">Tekan tombol untuk mulai merekam</div>
+        <div id="rec-hint" class="text-xs text-road/50 mt-1">${t('Tekan tombol untuk mulai merekam')}</div>
       </div>
 
       <div class="flex flex-wrap gap-2 justify-center mb-6">
         <button id="btn-record" class="btn btn-primary">
-          <span>🎙️</span><span>Mulai Rekam</span>
+          <span>🎙️</span><span>${t('Mulai Rekam')}</span>
         </button>
         <button id="btn-stop" class="btn btn-ghost hidden">
-          <span>⏹️</span><span>Stop</span>
+          <span>⏹️</span><span>${t('Stop')}</span>
         </button>
         <button id="btn-cancel-rec" class="btn btn-ghost hidden">
-          <span>✖️</span><span>Batalkan Rekaman</span>
+          <span>✖️</span><span>${t('Batalkan Rekaman')}</span>
         </button>
         <button id="btn-transcribe" class="btn btn-cyan hidden">
-          <span>✨</span><span>Proses Transkripsi</span>
+          <span>✨</span><span>${t('Proses Transkripsi')}</span>
         </button>
       </div>
 
       <div id="editor-area" class="hidden">
-        <label class="block text-sm font-medium mb-1">Judul catatan</label>
-        <input id="note-title" type="text" placeholder="Contoh: Teknik parkir paralel"
+        <label class="block text-sm font-medium mb-1">${t('Judul catatan')}</label>
+        <input id="note-title" type="text" placeholder="${t('Contoh: Teknik parkir paralel')}"
           class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
 
         <label class="block text-sm font-medium mb-1">
-          Isi catatan
-          <span class="text-xs text-road/40 font-normal">(letakkan kursor di posisi yang diinginkan, lalu klik "Tambah Rekam")</span>
+          ${t('Isi catatan')}
+          <span class="text-xs text-road/40 font-normal">(${t('Hasil akan disisipkan pada posisi kursor')})</span>
         </label>
-        <textarea id="note-text" rows="10" placeholder="Hasil transkripsi akan muncul di sini, bisa diedit..."
+        <textarea id="note-text" rows="10" placeholder="${t('Hasil transkripsi akan muncul di sini, bisa diedit...')}"
           class="w-full px-4 py-3 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow font-roboto text-sm leading-relaxed"></textarea>
 
         <div class="flex flex-wrap gap-2">
           <button id="btn-save" class="btn btn-primary">
-            <span>💾</span><span>Simpan Catatan</span>
+            <span>💾</span><span>${t('Simpan Catatan')}</span>
           </button>
           <button id="btn-append" class="btn btn-cyan">
-            <span>🎙️</span><span>Tambah Rekam</span>
+            <span>🎙️</span><span>${t('Tambah Rekam')}</span>
           </button>
           <button id="btn-reset" class="btn btn-ghost">
-            <span>✖️</span><span>Batal</span>
+            <span>✖️</span><span>${t('Batal')}</span>
           </button>
         </div>
       </div>
@@ -256,25 +257,25 @@ registerRoute('#/notes/new', (_, view) => {
 
       <div id="append-modal" class="hidden fixed inset-0 z-50 bg-road/50 flex items-center justify-center p-4">
         <div class="bg-milk rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl border border-road/10">
-          <h3 class="font-bold text-lg mb-1">Tambah Rekam</h3>
-          <p class="text-xs text-road/60 mb-4">Hasil akan disisipkan pada posisi kursor</p>
+          <h3 class="font-bold text-lg mb-1">${t('Tambah Rekam')}</h3>
+          <p class="text-xs text-road/60 mb-4">${t('Hasil akan disisipkan pada posisi kursor')}</p>
           <div class="bg-white border border-road/10 rounded-xl p-4 mb-4">
             <div id="app-rec-visual" class="text-4xl mb-2">🎙️</div>
             <div id="app-rec-timer" class="text-xl font-bold tabular-nums text-road/40">00:00</div>
-            <div id="app-rec-hint" class="text-xs text-road/50 mt-1">Siap merekam</div>
+            <div id="app-rec-hint" class="text-xs text-road/50 mt-1">${t('Siap merekam')}</div>
           </div>
           <div class="flex flex-wrap gap-2 justify-center">
             <button id="app-btn-record" class="btn btn-primary">
-              <span>🎙️</span><span>Mulai</span>
+              <span>🎙️</span><span>${t('Mulai')}</span>
             </button>
             <button id="app-btn-stop" class="btn btn-ghost hidden">
-              <span>⏹️</span><span>Stop</span>
+              <span>⏹️</span><span>${t('Stop')}</span>
             </button>
             <button id="app-btn-transcribe" class="btn btn-cyan hidden">
-              <span>✨</span><span>Sisipkan</span>
+              <span>✨</span><span>${t('Sisipkan')}</span>
             </button>
             <button id="app-btn-close" class="btn btn-ghost">
-              <span>✖️</span><span>Tutup</span>
+              <span>✖️</span><span>${t('Tutup')}</span>
             </button>
           </div>
           <div id="app-rec-error" class="hidden mt-3 text-xs text-stopRed"></div>
@@ -326,7 +327,7 @@ registerRoute('#/notes/new', (_, view) => {
 
   btnRecord.addEventListener('click', async () => {
     clearError();
-    if (!VoiceRecorder.isSupported()) { showError('Browser Anda tidak mendukung rekaman suara.'); return; }
+    if (!VoiceRecorder.isSupported()) { showError(t('Browser Anda tidak mendukung rekaman suara. Gunakan Chrome, Edge, atau Safari terbaru.')); return; }
     try {
       recorder = new VoiceRecorder();
       await recorder.start((ms) => {
@@ -340,9 +341,9 @@ registerRoute('#/notes/new', (_, view) => {
       btnCancelRec.classList.remove('hidden');
       btnTranscribe.classList.add('hidden');
       editorArea.classList.add('hidden');
-      hintEl.textContent = 'Sedang merekam... bicara dengan jelas';
+      hintEl.textContent = t('Sedang merekam... bicara dengan jelas');
     } catch (err) {
-      showError('Gagal mengakses mikrofon: ' + err.message);
+      showError(t('Gagal mengakses mikrofon') + ': ' + err.message);
     }
   });
 
@@ -354,12 +355,12 @@ registerRoute('#/notes/new', (_, view) => {
       currentMime = result.mimeType;
       currentDuration = result.durationMs;
       if (currentBlob.size > 19 * 1024 * 1024) {
-        showError('Rekaman terlalu besar. Maksimal 19 MB.');
+        showError(t('Rekaman terlalu besar. Maksimal 19 MB.'));
         resetMainButtons();
         return;
       }
       visualEl.textContent = '✅';
-      hintEl.textContent = 'Rekaman siap diproses (' + fmtDuration(currentDuration) + ')';
+      hintEl.textContent = t('Rekaman siap diproses') + ' (' + fmtDuration(currentDuration) + ')';
       timerEl.classList.add('text-road/40');
       timerEl.classList.remove('text-stopRed');
       btnStop.classList.add('hidden');
@@ -367,7 +368,7 @@ registerRoute('#/notes/new', (_, view) => {
       btnTranscribe.classList.remove('hidden');
       btnRecord.classList.add('hidden');
     } catch (err) {
-      showError('Gagal menghentikan rekaman: ' + err.message);
+      showError(t('Gagal menghentikan rekaman') + ': ' + err.message);
       resetMainButtons();
     }
   });
@@ -383,21 +384,21 @@ registerRoute('#/notes/new', (_, view) => {
     clearError();
     if (!currentBlob) return;
     btnTranscribe.disabled = true;
-    btnTranscribe.innerHTML = '<span>⏳</span><span>Memproses...</span>';
-    hintEl.textContent = 'Mengirim audio ke Gemini...';
+    btnTranscribe.innerHTML = `<span>⏳</span><span>${t('Memproses...')}</span>`;
+    hintEl.textContent = t('Mengirim audio ke Gemini...');
     try {
       const base64 = await blobToBase64(currentBlob);
       const { API } = await import('./api.js');
       const result = await API.transcribe(base64, currentMime);
       textInput.value = result.text || '';
       editorArea.classList.remove('hidden');
-      hintEl.textContent = 'Transkripsi selesai. Edit teks jika perlu.';
+      hintEl.textContent = t('Transkripsi selesai. Edit teks jika perlu.');
       setTimeout(() => editorArea.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     } catch (err) {
-      showError('Transkripsi gagal: ' + err.message);
+      showError(t('Transkripsi gagal') + ': ' + err.message);
     } finally {
       btnTranscribe.disabled = false;
-      btnTranscribe.innerHTML = '<span>✨</span><span>Proses Transkripsi</span>';
+      btnTranscribe.innerHTML = `<span>✨</span><span>${t('Proses Transkripsi')}</span>`;
     }
   });
 
@@ -410,26 +411,26 @@ registerRoute('#/notes/new', (_, view) => {
     timerEl.classList.add('text-road/40');
     timerEl.classList.remove('text-stopRed');
     visualEl.textContent = '🎙️';
-    hintEl.textContent = 'Tekan tombol untuk mulai merekam';
+    hintEl.textContent = t('Tekan tombol untuk mulai merekam');
   }
 
   btnSave.addEventListener('click', async () => {
     clearError();
     const title = titleInput.value.trim();
     const text = textInput.value.trim();
-    if (!title) { showError('Judul catatan tidak boleh kosong.'); return; }
-    if (!text)  { showError('Isi catatan tidak boleh kosong.'); return; }
+    if (!title) { showError(t('Judul catatan tidak boleh kosong.')); return; }
+    if (!text)  { showError(t('Isi tidak boleh kosong.')); return; }
     btnSave.disabled = true;
-    btnSave.innerHTML = '<span>⏳</span><span>Menyimpan...</span>';
+    btnSave.innerHTML = `<span>⏳</span><span>${t('Menyimpan...')}</span>`;
     try {
       const { API } = await import('./api.js');
       await API.saveNote({ title, original_text: text, language: 'id-ID', duration_ms: currentDuration });
-      toast('Catatan berhasil disimpan!');
+      toast(t('Catatan berhasil disimpan!'));
       location.hash = '#/notes';
     } catch (err) {
-      showError('Gagal menyimpan: ' + err.message);
+      showError(t('Gagal menyimpan') + ': ' + err.message);
       btnSave.disabled = false;
-      btnSave.innerHTML = '<span>💾</span><span>Simpan Catatan</span>';
+      btnSave.innerHTML = `<span>💾</span><span>${t('Simpan Catatan')}</span>`;
     }
   });
 
@@ -458,7 +459,7 @@ registerRoute('#/notes/new', (_, view) => {
     appTimerEl.classList.add('text-road/40');
     appTimerEl.classList.remove('text-stopRed');
     appVisualEl.textContent = '🎙️';
-    appHintEl.textContent = 'Siap merekam';
+    appHintEl.textContent = t('Siap merekam');
     appBtnRecord.classList.remove('hidden');
     appBtnStop.classList.add('hidden');
     appBtnTrans.classList.add('hidden');
@@ -476,7 +477,7 @@ registerRoute('#/notes/new', (_, view) => {
 
   appBtnRecord.addEventListener('click', async () => {
     clearAppError();
-    if (!VoiceRecorder.isSupported()) { showAppError('Browser tidak mendukung rekaman.'); return; }
+    if (!VoiceRecorder.isSupported()) { showAppError(t('Browser tidak mendukung rekaman.')); return; }
     try {
       appRecorder = new VoiceRecorder();
       await appRecorder.start((ms) => {
@@ -488,9 +489,9 @@ registerRoute('#/notes/new', (_, view) => {
       appBtnRecord.classList.add('hidden');
       appBtnStop.classList.remove('hidden');
       appBtnTrans.classList.add('hidden');
-      appHintEl.textContent = 'Sedang merekam... bicara dengan jelas';
+      appHintEl.textContent = t('Sedang merekam... bicara dengan jelas');
     } catch (err) {
-      showAppError('Gagal mengakses mikrofon: ' + err.message);
+      showAppError(t('Gagal mengakses mikrofon') + ': ' + err.message);
     }
   });
 
@@ -501,19 +502,19 @@ registerRoute('#/notes/new', (_, view) => {
       appBlob = result.blob;
       appMime = result.mimeType;
       if (appBlob.size > 19 * 1024 * 1024) {
-        showAppError('Rekaman terlalu besar.');
+        showAppError(t('Rekaman terlalu besar.'));
         resetAppendModal();
         return;
       }
       appVisualEl.textContent = '✅';
-      appHintEl.textContent = 'Siap disisipkan ke catatan';
+      appHintEl.textContent = t('Siap disisipkan ke catatan');
       appTimerEl.classList.add('text-road/40');
       appTimerEl.classList.remove('text-stopRed');
       appBtnStop.classList.add('hidden');
       appBtnTrans.classList.remove('hidden');
       appBtnRecord.classList.add('hidden');
     } catch (err) {
-      showAppError('Gagal menghentikan rekaman: ' + err.message);
+      showAppError(t('Gagal menghentikan rekaman') + ': ' + err.message);
       resetAppendModal();
     }
   });
@@ -522,19 +523,19 @@ registerRoute('#/notes/new', (_, view) => {
     clearAppError();
     if (!appBlob) return;
     appBtnTrans.disabled = true;
-    appBtnTrans.innerHTML = '<span>⏳</span><span>Memproses...</span>';
-    appHintEl.textContent = 'Mengirim audio ke Gemini...';
+    appBtnTrans.innerHTML = `<span>⏳</span><span>${t('Memproses...')}</span>`;
+    appHintEl.textContent = t('Mengirim audio ke Gemini...');
     try {
       const base64 = await blobToBase64(appBlob);
       const { API } = await import('./api.js');
       const result = await API.transcribe(base64, appMime);
       insertTextAtCursor(result.text || '');
-      toast('Teks tambahan disisipkan');
+      toast(t('Teks tambahan disisipkan'));
       closeAppendModal();
     } catch (err) {
-      showAppError('Transkripsi gagal: ' + err.message);
+      showAppError(t('Transkripsi gagal') + ': ' + err.message);
       appBtnTrans.disabled = false;
-      appBtnTrans.innerHTML = '<span>✨</span><span>Sisipkan</span>';
+      appBtnTrans.innerHTML = `<span>✨</span><span>${t('Sisipkan')}</span>`;
     }
   });
 
@@ -572,9 +573,9 @@ registerRoute('#/notes/:id', (params, view) => {
   const wrap = el(`
     <div class="max-w-3xl mx-auto">
       <a href="#/notes" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
-        <span>←</span><span>Kembali ke Daftar</span>
+        <span>←</span><span>${t('Kembali ke Daftar')}</span>
       </a>
-      <div id="detail-body">${loadingBlock('Memuat catatan...')}</div>
+      <div id="detail-body">${loadingBlock()}</div>
     </div>
   `);
   view.appendChild(wrap);
@@ -587,7 +588,7 @@ registerRoute('#/notes/:id', (params, view) => {
       const note = await API.getNote(id);
       renderDetail(note);
     } catch (err) {
-      bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+      bodyEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/notes');
     }
   })();
 
@@ -595,37 +596,35 @@ registerRoute('#/notes/:id', (params, view) => {
     const dur = n.duration_ms ? fmtDuration(Number(n.duration_ms)) : '-';
     bodyEl.innerHTML = `
       <div class="bg-white border border-road/10 rounded-2xl p-6 mb-4">
-        <h1 class="text-2xl font-bold leading-snug mb-3">${escapeHtml(n.title || 'Tanpa judul')}</h1>
+        <h1 class="text-2xl font-bold leading-snug mb-3">${escapeHtml(n.title || t('Judul catatan'))}</h1>
         <div class="flex flex-wrap items-center gap-3 text-xs text-road/50 mb-5">
           <span>📅 ${escapeHtml(fmtDate(n.created_at))}</span>
           <span>⏱ ${dur}</span>
-          <span class="px-2 py-0.5 rounded-full bg-road/5">ID: ${escapeHtml(n.id)}</span>
+          <span class="px-2 py-0.5 rounded-full bg-road/5">${t('ID')}: ${escapeHtml(n.id)}</span>
         </div>
         <div class="prose max-w-none text-[15px] leading-relaxed whitespace-pre-wrap break-words">${escapeHtml(n.original_text || '')}</div>
       </div>
 
       <div class="flex flex-wrap gap-2">
         <a href="#/notes/${encodeURIComponent(n.id)}/edit" class="btn btn-primary">
-          <span>✏️</span><span>Edit</span>
+          <span>✏️</span><span>${t('Edit')}</span>
         </a>
         <button id="btn-delete-detail" class="btn btn-ghost text-stopRed border-stopRed/30">
-          <span>🗑</span><span>Hapus</span>
+          <span>🗑</span><span>${t('Hapus')}</span>
         </button>
       </div>
     `;
 
     bodyEl.querySelector('#btn-delete-detail').addEventListener('click', () => {
-      openDeleteConfirm(n.title || 'Catatan ini', async () => {
+      openDeleteConfirm(n.title || t('Hapus'), async () => {
         try {
           const { API } = await import('./api.js');
           await API.deleteNote(n.id);
-          toast('Catatan dihapus');
-          // Pindah ke daftar catatan (hash berubah → navigate otomatis)
+          toast(t('Catatan dihapus'));
           location.hash = '#/notes';
-          // Force navigate kalau hash sudah #/notes (edge case)
           setTimeout(() => navigate(), 50);
         } catch (err) {
-          toast('Gagal menghapus: ' + err.message);
+          toast(t('Gagal menghapus') + ': ' + err.message);
         }
       });
     });
@@ -643,13 +642,13 @@ registerRoute('#/notes/:id/edit', (params, view) => {
   const wrap = el(`
     <div class="max-w-2xl mx-auto">
       <a href="#/notes/${encodeURIComponent(id)}" class="inline-flex items-center gap-1 text-sm text-road/60 hover:text-road mb-4">
-        <span>←</span><span>Kembali ke Detail</span>
+        <span>←</span><span>${t('Kembali ke Detail')}</span>
       </a>
       <div class="mb-6">
-        <h1 class="text-2xl font-bold">Edit Catatan</h1>
-        <p class="text-sm text-road/60 mt-1">Ubah judul atau isi catatan Anda.</p>
+        <h1 class="text-2xl font-bold">${t('Edit Catatan')}</h1>
+        <p class="text-sm text-road/60 mt-1">${t('Ubah judul atau isi catatan Anda.')}</p>
       </div>
-      <div id="edit-body">${loadingBlock('Memuat catatan...')}</div>
+      <div id="edit-body">${loadingBlock()}</div>
     </div>
   `);
   view.appendChild(wrap);
@@ -662,29 +661,29 @@ registerRoute('#/notes/:id/edit', (params, view) => {
       const note = await API.getNote(id);
       renderEdit(note);
     } catch (err) {
-      bodyEl.innerHTML = errorBlock('Gagal memuat: ' + err.message, '#/notes');
+      bodyEl.innerHTML = errorBlock(t('Gagal memuat') + ': ' + err.message, '#/notes');
     }
   })();
 
   function renderEdit(n) {
     bodyEl.innerHTML = `
-      <label class="block text-sm font-medium mb-1">Judul catatan</label>
+      <label class="block text-sm font-medium mb-1">${t('Judul catatan')}</label>
       <input id="edit-title" type="text" value="${escapeHtml(n.title || '')}"
         class="w-full px-4 py-2 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow" />
 
-      <label class="block text-sm font-medium mb-1">Isi catatan</label>
+      <label class="block text-sm font-medium mb-1">${t('Isi catatan')}</label>
       <textarea id="edit-text" rows="14"
         class="w-full px-4 py-3 rounded-xl border border-road/15 bg-white mb-4 focus:outline-none focus:border-cyanGlow font-roboto text-sm leading-relaxed">${escapeHtml(n.original_text || '')}</textarea>
 
       <div class="flex flex-wrap gap-2">
         <button id="edit-save" class="btn btn-primary">
-          <span>💾</span><span>Simpan Perubahan</span>
+          <span>💾</span><span>${t('Simpan Perubahan')}</span>
         </button>
         <a href="#/notes/${encodeURIComponent(n.id)}" class="btn btn-ghost">
-          <span>✖️</span><span>Batal</span>
+          <span>✖️</span><span>${t('Batal')}</span>
         </a>
         <button id="edit-delete" class="btn btn-ghost text-stopRed border-stopRed/30 ml-auto">
-          <span>🗑</span><span>Hapus</span>
+          <span>🗑</span><span>${t('Hapus')}</span>
         </button>
       </div>
 
@@ -704,11 +703,11 @@ registerRoute('#/notes/:id/edit', (params, view) => {
       clearErr();
       const title = titleIn.value.trim();
       const text  = textIn.value.trim();
-      if (!title) { showErr('Judul tidak boleh kosong.'); return; }
-      if (!text)  { showErr('Isi tidak boleh kosong.'); return; }
+      if (!title) { showErr(t('Judul tidak boleh kosong.')); return; }
+      if (!text)  { showErr(t('Isi tidak boleh kosong.')); return; }
 
       btnSave.disabled = true;
-      btnSave.innerHTML = '<span>⏳</span><span>Menyimpan...</span>';
+      btnSave.innerHTML = `<span>⏳</span><span>${t('Menyimpan...')}</span>`;
 
       try {
         const { API } = await import('./api.js');
@@ -720,25 +719,25 @@ registerRoute('#/notes/:id/edit', (params, view) => {
           duration_ms: n.duration_ms || 0,
           created_at: n.created_at
         });
-        toast('Perubahan disimpan');
+        toast(t('Perubahan disimpan'));
         location.hash = '#/notes/' + encodeURIComponent(n.id);
       } catch (err) {
-        showErr('Gagal menyimpan: ' + err.message);
+        showErr(t('Gagal menyimpan') + ': ' + err.message);
         btnSave.disabled = false;
-        btnSave.innerHTML = '<span>💾</span><span>Simpan Perubahan</span>';
+        btnSave.innerHTML = `<span>💾</span><span>${t('Simpan Perubahan')}</span>`;
       }
     });
 
     btnDel.addEventListener('click', () => {
-      openDeleteConfirm(n.title || 'Catatan ini', async () => {
+      openDeleteConfirm(n.title || t('Hapus'), async () => {
         try {
           const { API } = await import('./api.js');
           await API.deleteNote(n.id);
-          toast('Catatan dihapus');
+          toast(t('Catatan dihapus'));
           location.hash = '#/notes';
           setTimeout(() => navigate(), 50);
         } catch (err) {
-          toast('Gagal menghapus: ' + err.message);
+          toast(t('Gagal menghapus') + ': ' + err.message);
         }
       });
     });
@@ -752,8 +751,8 @@ registerRoute('#/groups', (_, view) => {
   if (!guardRoute()) return;
   view.appendChild(el(`
     <div>
-      <h1 class="text-xl font-bold mb-2">Group Catatan</h1>
-      <p class="text-sm text-road/60">Fitur grouping akan dibangun pada Phase 4.</p>
+      <h1 class="text-xl font-bold mb-2">${t('Buat Group Catatan')}</h1>
+      <p class="text-sm text-road/60">${t('Fitur grouping akan dibangun pada Phase 4.')}</p>
     </div>
   `));
 });
@@ -762,8 +761,8 @@ registerRoute('#/groups/new', (_, view) => {
   if (!guardRoute()) return;
   view.appendChild(el(`
     <div>
-      <h1 class="text-xl font-bold mb-2">Buat Group</h1>
-      <p class="text-sm text-road/60">Akan dibangun pada Phase 4.</p>
+      <h1 class="text-xl font-bold mb-2">${t('Buat Group')}</h1>
+      <p class="text-sm text-road/60">${t('Akan dibangun pada Phase 4.')}</p>
     </div>
   `));
 });
@@ -774,14 +773,14 @@ registerRoute('#/groups/new', (_, view) => {
 registerRoute('#/slide', (_, view) => {
   view.appendChild(el(`
     <div>
-      <h1 class="text-xl font-bold mb-2">Slide Note</h1>
-      <p class="text-sm text-road/60">Daftar slide publik akan dibangun pada Phase 4.</p>
+      <h1 class="text-xl font-bold mb-2">${t('Lihat Slide Note')}</h1>
+      <p class="text-sm text-road/60">${t('Daftar slide publik akan dibangun pada Phase 4.')}</p>
     </div>
   `));
 });
 
 // =====================================================
-// MODAL KONFIRMASI HAPUS (global)
+// MODAL KONFIRMASI HAPUS
 // =====================================================
 function openDeleteConfirm(title, onConfirm) {
   const existing = document.getElementById('global-confirm');
@@ -791,16 +790,16 @@ function openDeleteConfirm(title, onConfirm) {
     <div id="global-confirm" class="fixed inset-0 z-[60] bg-road/60 flex items-center justify-center p-4">
       <div class="bg-milk rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-road/10 text-center">
         <div class="text-4xl mb-3">🗑</div>
-        <h3 class="font-bold text-lg mb-2">Hapus Catatan?</h3>
+        <h3 class="font-bold text-lg mb-2">${t('Hapus Catatan?')}</h3>
         <p class="text-sm text-road/70 mb-5">
-          Catatan <strong>"${escapeHtml(title)}"</strong> akan dihapus permanen dan tidak bisa dikembalikan.
+          "${escapeHtml(title)}" ${t('akan dihapus permanen dan tidak bisa dikembalikan.')}
         </p>
         <div class="flex gap-2 justify-center">
           <button id="gc-cancel" class="btn btn-ghost">
-            <span>✖️</span><span>Batal</span>
+            <span>✖️</span><span>${t('Batal')}</span>
           </button>
           <button id="gc-yes" class="btn" style="background:#D7263D;color:#fff">
-            <span>🗑</span><span>Ya, Hapus</span>
+            <span>🗑</span><span>${t('Ya, Hapus')}</span>
           </button>
         </div>
       </div>
@@ -824,6 +823,9 @@ function openDeleteConfirm(title, onConfirm) {
 async function boot() {
   document.getElementById('year').textContent = new Date().getFullYear();
 
+  // Terapkan i18n ke elemen HTML statis (header, footer, loading)
+  applyI18n();
+
   await playLoadingAnimation('#loading-sign');
 
   const loading = document.getElementById('loading-screen');
@@ -833,14 +835,25 @@ async function boot() {
     document.getElementById('app').classList.remove('hidden');
   }, 400);
 
+  // Tombol ganti bahasa
+  document.getElementById('btn-lang').addEventListener('click', openLangSwitcher);
+
   initAuth();
 
+  // Saat user login/logout
   document.addEventListener('auth:change', () => {
+    refreshAuthUI();
+    navigate();
+  });
+
+  // Saat bahasa berganti
+  document.addEventListener('lang:change', () => {
+    applyI18n();
+    refreshAuthUI();
     navigate();
   });
 
   startRouter();
-
   startLogoAnimation();
 }
 

@@ -1,4 +1,5 @@
 import { el } from './ui.js';
+import { t } from './lang.js';
 
 const routes = [];
 let currentCleanup = null;
@@ -11,14 +12,12 @@ export async function navigate() {
   const view = document.getElementById('view');
   const hash = location.hash || '#/';
 
-  // cleanup rute sebelumnya
   if (typeof currentCleanup === 'function') {
-    try { currentCleanup(); } catch {}
+    try { currentCleanup(); } catch (e) {}
     currentCleanup = null;
   }
   view.innerHTML = '';
 
-  // cari rute yang cocok
   for (const r of routes) {
     const m = matchRoute(r.hash, hash);
     if (m) {
@@ -29,8 +28,7 @@ export async function navigate() {
     }
   }
 
-  // fallback
-  view.appendChild(el(`<div class="text-center py-20 text-road/60">Halaman tidak ditemukan</div>`));
+  view.appendChild(el(`<div class="text-center py-20 text-road/60">${t('Halaman tidak ditemukan')}</div>`));
 }
 
 function matchRoute(pattern, hash) {
