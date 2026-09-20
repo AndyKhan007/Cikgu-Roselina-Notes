@@ -535,8 +535,11 @@ registerRoute('#/notes/:id', (params, view) => {
           <span class="font-semibold text-sm">${t('Narator')}</span>
           <span id="narr-status" class="text-xs text-road/40 ml-auto"></span>
         </div>
+
         <div class="flex flex-wrap items-center gap-2 mb-3">
-          <button id="btn-play" class="btn btn-primary" ${speechSupported ? '' : 'disabled'}><span>▶️</span><span>${t('Putar')}</span></button>
+          <button id="btn-play" class="btn btn-primary" ${speechSupported ? '' : 'disabled'}>
+            <span>▶️</span><span>${t('Putar')}</span>
+          </button>
           <button id="btn-pause" class="btn btn-ghost hidden"><span>⏸</span><span>${t('Jeda')}</span></button>
           <button id="btn-resume" class="btn btn-cyan hidden"><span>▶️</span><span>${t('Lanjut')}</span></button>
           <button id="btn-stop" class="btn btn-ghost hidden"><span>⏹</span><span>${t('Stop')}</span></button>
@@ -546,6 +549,7 @@ registerRoute('#/notes/:id', (params, view) => {
             <span id="rate-value" class="text-xs font-mono w-10 text-right">${rate.toFixed(1)}x</span>
           </div>
         </div>
+
         <div class="flex flex-wrap items-center gap-2 pt-3 border-t border-road/10">
           <span class="text-xs text-road/60">${t('Bahasa')}:</span>
           <select id="lang-select" class="text-xs px-3 py-1.5 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
@@ -556,7 +560,35 @@ registerRoute('#/notes/:id', (params, view) => {
             }).join('')}
           </select>
           <button id="btn-translate" class="btn btn-cyan text-xs"><span>✨</span><span>${t('Terjemahkan')}</span></button>
+          <button id="adv-toggle" class="text-xs text-road/60 hover:text-road ml-auto px-2 py-1 rounded hover:bg-road/5">
+            ⚙️ ${t('Pengaturan Suara')}
+          </button>
         </div>
+
+        <div id="adv-panel" class="hidden pt-3 border-t border-road/10 space-y-2 mt-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-road/60 w-16 flex-shrink-0">${t('Suara')}:</span>
+            <select id="voice-select" class="flex-1 text-xs px-2 py-1 rounded-lg border border-road/15 bg-white focus:outline-none focus:border-cyanGlow">
+              <option value="">${t('Suara default sistem')}</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-road/60 w-16 flex-shrink-0">🔊 ${t('Volume')}:</span>
+            <input id="volume-slider" type="range" min="0" max="1" step="0.05" value="1" class="flex-1 accent-cyanGlow" />
+            <span id="volume-value" class="text-xs font-mono w-10 text-right">100%</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-road/60 w-16 flex-shrink-0">🎵 ${t('Nada')}:</span>
+            <input id="pitch-slider" type="range" min="0.5" max="2" step="0.1" value="1" class="flex-1 accent-cyanGlow" />
+            <span id="pitch-value" class="text-xs font-mono w-10 text-right">1.0</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-road/60 w-16 flex-shrink-0">⏸ ${t('Jeda Tanda Baca')}:</span>
+            <input id="pause-slider" type="range" min="0" max="2" step="0.1" value="1" class="flex-1 accent-cyanGlow" />
+            <span id="pause-value" class="text-xs font-mono w-10 text-right">1.0x</span>
+          </div>
+        </div>
+
         ${!speechSupported ? `<p class="text-xs text-stopRed mt-3">⚠️ ${t('Narator tidak didukung di browser ini')}</p>` : ''}
       </div>
 
@@ -586,6 +618,23 @@ registerRoute('#/notes/:id', (params, view) => {
     const statusEl  = bodyEl.querySelector('#narr-status');
     const slider    = bodyEl.querySelector('#rate-slider');
     const rateVal   = bodyEl.querySelector('#rate-value');
+    const advToggle = bodyEl.querySelector('#adv-toggle');
+    const advPanel  = bodyEl.querySelector('#adv-panel');
+    const voiceSel  = bodyEl.querySelector('#voice-select');
+    const volSlider = bodyEl.querySelector('#volume-slider');
+    const volVal    = bodyEl.querySelector('#volume-value');
+    const pitchSlider = bodyEl.querySelector('#pitch-slider');
+    const pitchVal  = bodyEl.querySelector('#pitch-value');
+    const pauseSlider = bodyEl.querySelector('#pause-slider');
+    const pauseVal  = bodyEl.querySelector('#pause-value');
+
+    let pitch = parseFloat(localStorage.getItem('crn_narrator_pitch') || '1') || 1;
+    let volume = parseFloat(localStorage.getItem('crn_narrator_volume') || '1');
+    if (isNaN(volume)) volume = 1;
+    let pauseMultiplier = parseFloat(localStorage.getItem('crn_narrator_pause') || '1');
+    if (isNaN(pauseMultiplier)) pauseMultiplier = 1;
+    let voiceURI = localStorage.getItem('crn_narrator_voice') || '';
+    let advOpen = false;
 
     function setUIState(state) {
       const show = (el, yes) => el.classList.toggle('hidden', !yes);
@@ -602,13 +651,43 @@ registerRoute('#/notes/:id', (params, view) => {
     }
     narrator.onStateChange = setUIState;
 
+    function populateVoices() {
+      const speechLang = SPEECH_LANG[currentLang] || 'id-ID';
+      const voices = narrator.getVoicesForLang(speechLang);
+      voiceSel.innerHTML = `<option value="">${t('Suara default sistem')}</option>`;
+      if (!voices.length) {
+        const opt = document.createElement('option');
+        opt.disabled = true;
+        opt.textContent = t('Tidak ada suara untuk bahasa ini');
+        voiceSel.appendChild(opt);
+        return;
+      }
+      voices.forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.voiceURI;
+        opt.textContent = `${v.name} · ${v.lang}`;
+        if (v.voiceURI === voiceURI) opt.selected = true;
+        voiceSel.appendChild(opt);
+      });
+    }
+
+    function getSelectedVoice() {
+      if (!voiceURI) return null;
+      return narrator.getVoices().find(v => v.voiceURI === voiceURI) || null;
+    }
+
     btnPlay.addEventListener('click', async () => {
       if (!Narrator.isSupported()) { toast(t('Narator tidak didukung di browser ini')); return; }
       if (!currentDisplayText.trim()) { toast(t('Isi tidak boleh kosong.')); return; }
       await waitForVoices(1500);
+      populateVoices();
       const speechLang = SPEECH_LANG[currentLang] || 'id-ID';
-      const voice = narrator.pickBestVoice(speechLang);
-      narrator.speak(currentDisplayText, { lang: speechLang, rate, voice });
+      const voice = getSelectedVoice() || narrator.pickBestVoice(speechLang);
+      const rate = parseFloat(localStorage.getItem('crn_narrator_rate') || '1') || 1;
+      narrator.speak(currentDisplayText, {
+        lang: speechLang, rate, pitch, volume, voice,
+        pauseMultiplier
+      });
     });
 
     btnPause.addEventListener('click', () => narrator.pause());
@@ -618,10 +697,55 @@ registerRoute('#/notes/:id', (params, view) => {
     slider.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value) || 1;
       rateVal.textContent = v.toFixed(1) + 'x';
-      rate = v;
       localStorage.setItem('crn_narrator_rate', String(v));
       narrator.setRate(v);
     });
+
+    advToggle.addEventListener('click', () => {
+      advOpen = !advOpen;
+      advPanel.classList.toggle('hidden', !advOpen);
+      if (advOpen) populateVoices();
+    });
+
+    voiceSel.addEventListener('change', (e) => {
+      voiceURI = e.target.value;
+      localStorage.setItem('crn_narrator_voice', voiceURI);
+      narrator.setVoice(getSelectedVoice());
+    });
+
+    volSlider.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      volume = v;
+      localStorage.setItem('crn_narrator_volume', String(v));
+      volVal.textContent = Math.round(v * 100) + '%';
+      narrator.setVolume(v);
+    });
+
+    pitchSlider.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value) || 1;
+      pitch = v;
+      localStorage.setItem('crn_narrator_pitch', String(v));
+      pitchVal.textContent = v.toFixed(1);
+      narrator.setPitch(v);
+    });
+
+    pauseSlider.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value) || 0;
+      pauseMultiplier = v;
+      localStorage.setItem('crn_narrator_pause', String(v));
+      pauseVal.textContent = v.toFixed(1) + 'x';
+      narrator.setPauseMultiplier(v);
+    });
+
+    // Init nilai slider dari localStorage
+    slider.value = parseFloat(localStorage.getItem('crn_narrator_rate') || '1') || 1;
+    volSlider.value = volume;
+    volVal.textContent = Math.round(volume * 100) + '%';
+    pitchSlider.value = pitch;
+    pitchVal.textContent = pitch.toFixed(1);
+    pauseSlider.value = pauseMultiplier;
+    pauseVal.textContent = pauseMultiplier.toFixed(1) + 'x';
+
     setUIState('idle');
   }
 
@@ -698,7 +822,7 @@ registerRoute('#/notes/:id', (params, view) => {
     }
   });
 
-  return () => { try { narrator.stop(); } catch (e) {} };
+  return () => { try { narrator.destroy(); } catch (e) {} };
 });
 
 // =====================================================
@@ -1111,7 +1235,7 @@ registerRoute('#/groups/:id', (params, view) => {
 });
 
 // =====================================================
-// SLIDE PUBLIK — List + Viewer (Phase 4B)
+// SLIDE PUBLIK — List + Viewer
 // =====================================================
 registerRoute('#/slide', (_, view) => {
   mountSlideList(view);

@@ -2605,3 +2605,84 @@ Object.assign(TRANSLATIONS.ru, {
   'Rate limit, mencoba lagi': 'Лимит скорости, повтор',
   'Terlalu banyak permintaan': 'Слишком много запросов'
 });
+
+// =====================================================
+// TAMBAHAN — Jeda Tanda Baca (Punctuation Pause)
+// =====================================================
+Object.assign(TRANSLATIONS.en, {
+  'Jeda Tanda Baca': 'Punctuation Pause',
+  'Tanpa jeda tambahan': 'No extra pause',
+  'Jeda pendek': 'Short pause',
+  'Jeda normal': 'Normal pause',
+  'Jeda panjang': 'Long pause'
+});
+Object.assign(TRANSLATIONS.ms, {
+  'Jeda Tanda Baca': 'Jeda Tanda Baca',
+  'Tanpa jeda tambahan': 'Tanpa jeda tambahan',
+  'Jeda pendek': 'Jeda pendek',
+  'Jeda normal': 'Jeda biasa',
+  'Jeda panjang': 'Jeda panjang'
+});
+Object.assign(TRANSLATIONS.zh, {
+  'Jeda Tanda Baca': '标点停顿',
+  'Tanpa jeda tambahan': '无额外停顿',
+  'Jeda pendek': '短暂停顿',
+  'Jeda normal': '正常停顿',
+  'Jeda panjang': '长停顿'
+});
+Object.assign(TRANSLATIONS.ja, {
+  'Jeda Tanda Baca': '句読点の間',
+  'Tanpa jeda tambahan': '追加の間なし',
+  'Jeda pendek': '短い間',
+  'Jeda normal': '普通の間',
+  'Jeda panjang': '長い間'
+});
+Object.assign(TRANSLATIONS.ko, {
+  'Jeda Tanda Baca': '문장 부호 간격',
+  'Tanpa jeda tambahan': '추가 간격 없음',
+  'Jeda pendek': '짧은 간격',
+  'Jeda normal': '보통 간격',
+  'Jeda panjang': '긴 간격'
+});
+Object.assign(TRANSLATIONS.hi, {
+  'Jeda Tanda Baca': 'विराम चिह्न रुकावट',
+  'Tanpa jeda tambahan': 'कोई अतिरिक्त रुकावट नहीं',
+  'Jeda pendek': 'छोटी रुकावट',
+  'Jeda normal': 'सामान्य रुकावट',
+  'Jeda panjang': 'लंबी रुकावट'
+});
+Object.assign(TRANSLATIONS.th, {
+  'Jeda Tanda Baca': 'หยุดตามเครื่องหมาย',
+  'Tanpa jeda tambahan': 'ไม่หยุดเพิ่ม',
+  'Jeda pendek': 'หยุดสั้น',
+  'Jeda normal': 'หยุดปกติ',
+  'Jeda panjang': 'หยุดยาว'
+});
+Object.assign(TRANSLATIONS.tl, {
+  'Jeda Tanda Baca': 'Pahinga ng Bantas',
+  'Tanpa jeda tambahan': 'Walang karagdagang pahinga',
+  'Jeda pendek': 'Maikling pahinga',
+  'Jeda normal': 'Normal na pahinga',
+  'Jeda panjang': 'Mahabang pahinga'
+});
+Object.assign(TRANSLATIONS.my, {
+  'Jeda Tanda Baca': 'သင်္ကေတအနားယူ',
+  'Tanpa jeda tambahan': 'အပိုအနားမယူပါ',
+  'Jeda pendek': 'အနားတို',
+  'Jeda normal': 'အနားပုံမှန်',
+  'Jeda panjang': 'အနားရှည်'
+});
+Object.assign(TRANSLATIONS.vi, {
+  'Jeda Tanda Baca': 'Ngắt dấu câu',
+  'Tanpa jeda tambahan': 'Không ngắt thêm',
+  'Jeda pendek': 'Ngắt ngắn',
+  'Jeda normal': 'Ngắt bình thường',
+  'Jeda panjang': 'Ngắt dài'
+});
+Object.assign(TRANSLATIONS.ru, {
+  'Jeda Tanda Baca': 'Пауза на пунктуацию',
+  'Tanpa jeda tambahan': 'Без дополнительной паузы',
+  'Jeda pendek': 'Короткая пауза',
+  'Jeda normal': 'Обычная пауза',
+  'Jeda panjang': 'Длинная пауза'
+});

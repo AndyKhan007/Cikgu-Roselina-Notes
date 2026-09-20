@@ -1,8 +1,103 @@
 // =====================================================
-// Narrator — Web Speech API wrapper dengan karaoke highlight
-// + Fallback timer (untuk browser tanpa onboundary)
-// + Auto-scroll kata aktif
+// Narrator v3 — Punctuation-Aware Chunking
+// Teknik adaptasi dari Android README:
+//   1. Intelligent Text Splitting per tanda baca
+//   2. Cumulative Offset Mapping (startIndex per chunk)
+//   3. Dynamic pause setelah tanda baca (user-controllable)
+//   4. Per-chunk fallback timer (kalau onboundary gagal)
 // =====================================================
+
+const MAX_CHUNK_LEN = 180;
+const MIN_CHUNK_LEN = 20;
+const WATCHDOG_MS = 900;
+const FALLBACK_WPM = 175;
+
+// Delay dasar setelah tanda baca (ms, sebelum dikali multiplier)
+const BASE_PAUSE = {
+  newline: 400,
+  sentence: 350,  // . ! ?
+  clause: 180     // , ; :
+};
+
+/**
+ * Chunking berbasis tanda baca + cumulative offset mapping.
+ * Setiap chunk: { text, startIndex, endIndex, pauseAfterMs, pauseType }
+ */
+function chunkText(text, maxLen = MAX_CHUNK_LEN) {
+  const chunks = [];
+  let pos = 0;
+
+  while (pos < text.length) {
+    // Skip leading whitespace
+    while (pos < text.length && /\s/.test(text[pos])) pos++;
+    if (pos >= text.length) break;
+
+    // Kalau sisa muat satu chunk, ambil semua
+    if (text.length - pos <= maxLen) {
+      chunks.push({
+        text: text.substring(pos),
+        startIndex: pos,
+        endIndex: text.length,
+        pauseAfterMs: 0,
+        pauseType: 'end'
+      });
+      break;
+    }
+
+    const maxEnd = pos + maxLen;
+    let splitAt = -1;
+    let pauseMs = 0;
+    let pauseType = 'none';
+
+    // Scan untuk split point terbaik
+    for (let i = pos + MIN_CHUNK_LEN; i < maxEnd; i++) {
+      const c = text[i];
+      const after = text[i + 1];
+      const afterOK = !after || /\s/.test(after);
+
+      if (c === '\n') {
+        splitAt = i + 1;
+        pauseMs = BASE_PAUSE.newline;
+        pauseType = 'newline';
+        break; // prioritas tertinggi
+      } else if ((c === '.' || c === '!' || c === '?') && afterOK) {
+        splitAt = i + 1;
+        pauseMs = BASE_PAUSE.sentence;
+        pauseType = 'sentence';
+        break; // prioritas tinggi
+      } else if ((c === ',' || c === ';' || c === ':') && afterOK) {
+        // Simpan sebagai kandidat, tapi lanjut scan (mungkin ada titik setelahnya)
+        if (splitAt === -1) {
+          splitAt = i + 1;
+          pauseMs = BASE_PAUSE.clause;
+          pauseType = 'clause';
+        }
+      }
+    }
+
+    let end;
+    if (splitAt > 0) {
+      end = splitAt;
+    } else {
+      // Tidak ada tanda baca → potong di batas kata terdekat
+      end = maxEnd;
+      while (end < text.length && !/\s/.test(text[end])) end++;
+      pauseMs = 0;
+      pauseType = 'word';
+    }
+
+    chunks.push({
+      text: text.substring(pos, end),
+      startIndex: pos,
+      endIndex: end,
+      pauseAfterMs: pauseMs,
+      pauseType: pauseType
+    });
+    pos = end;
+  }
+
+  return chunks;
+}
 
 export class Narrator {
   constructor() {
@@ -12,41 +107,55 @@ export class Narrator {
     this.activeSpan = null;
     this.isPlaying = false;
     this.isPaused = false;
+    this.isStopped = true;
+
+    // Audio
     this.rate = 1;
+    this.pitch = 1;
+    this.volume = 1;
+    this.pauseMultiplier = 1; // 0 = tanpa jeda tambahan
     this.lang = 'id-ID';
     this.voice = null;
-    this.onStateChange = null;
-    this.onWordChange = null;
-    this.onEnd = null;
-    this.onProgress = null; // (currentIndex, totalWords)
-    this._fullText = '';
-    this._lastAbsoluteIndex = 0;
 
-    // Fallback timing
+    // Chunking
+    this._originalText = '';
+    this.chunks = [];
+    this.activeChunkIndex = -1;
+
+    // Fallback per-chunk
     this._boundaryFired = false;
     this._watchdogTimer = null;
     this._fallbackTimer = null;
     this._usingFallback = false;
-    this._currentFallbackIndex = 0;
-    this._startedAt = 0;
+
+    // Callbacks
+    this.onStateChange = null;
+    this.onWordChange = null;
+    this.onEnd = null;
+    this.onProgress = null;
+    this.onChunkChange = null;
+
+    // Auto-pause on hidden
+    this.autoPauseOnHidden = true;
+    this._onVisibilityChange = () => {
+      if (!this.autoPauseOnHidden) return;
+      if (document.hidden && this.isPlaying) this.pause();
+    };
+    document.addEventListener('visibilitychange', this._onVisibilityChange);
   }
 
   static isSupported() {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
   }
 
-  /**
-   * Render teks menjadi span per kata
-   */
+  // ============ Render kata ============
   renderWords(text, container) {
     container.innerHTML = '';
     this.wordSpans = [];
     this.activeSpan = null;
-    this._currentFallbackIndex = 0;
 
     const regex = /\S+/g;
-    let m;
-    let last = 0;
+    let m, last = 0;
     while ((m = regex.exec(text)) !== null) {
       if (m.index > last) {
         container.appendChild(document.createTextNode(text.substring(last, m.index)));
@@ -65,69 +174,95 @@ export class Narrator {
     }
   }
 
-  /**
-   * Mulai membaca teks
-   */
-  speak(text, { lang = 'id-ID', rate = 1, voice = null } = {}) {
+  // ============ Speak ============
+  speak(text, { lang = 'id-ID', rate = 1, pitch = 1, volume = 1, voice = null, pauseMultiplier = 1 } = {}) {
     if (!Narrator.isSupported()) return;
     this.stop();
 
-    this._fullText = text;
+    this._originalText = text;
     this.lang = lang;
     this.rate = rate;
+    this.pitch = pitch;
+    this.volume = volume;
+    this.pauseMultiplier = Math.max(0, Math.min(2, Number(pauseMultiplier) || 0));
     this.voice = voice;
-    this._lastAbsoluteIndex = 0;
-    this._currentFallbackIndex = 0;
-    this._usingFallback = false;
-    this._boundaryFired = false;
-    this._startedAt = Date.now();
+    this.isStopped = false;
 
-    this._speakRange(0);
+    this.chunks = chunkText(text);
+    if (!this.chunks.length) return;
+
+    this.activeChunkIndex = 0;
+    console.info(`[Narrator] ${this.chunks.length} chunk (punctuation-aware).`);
+
+    setTimeout(() => this._speakChunk(0), 80);
   }
 
-  _speakRange(startIndex) {
-    const remaining = this._fullText.substring(startIndex);
-    if (!remaining.trim()) {
+  _speakChunk(index) {
+    if (this.isStopped) return;
+    if (index >= this.chunks.length) {
       this._endSpeak();
       return;
     }
 
-    const utt = new SpeechSynthesisUtterance(remaining);
+    const prevIdx = this.activeChunkIndex;
+    this.activeChunkIndex = index;
+    const chunk = this.chunks[index];
+
+    if (prevIdx !== index) this.onChunkChange?.(index, this.chunks.length);
+
+    // Reset status boundary per chunk
+    this._boundaryFired = false;
+
+    const utt = new SpeechSynthesisUtterance(chunk.text);
     utt.lang = this.lang;
     utt.rate = this.rate;
+    utt.pitch = this.pitch;
+    utt.volume = this.volume;
     if (this.voice) utt.voice = this.voice;
 
-    const offset = startIndex;
-
     utt.onstart = () => {
-      this.isPlaying = true;
-      this.isPaused = false;
-      this._startedAt = Date.now();
-      this.onStateChange?.('playing');
+      if (index === 0 && !this.isPlaying) {
+        this.isPlaying = true;
+        this.isPaused = false;
+        this.onStateChange?.('playing');
+      }
       this._startWatchdog();
     };
 
     utt.onboundary = (e) => {
       if (e.name && e.name !== 'word') return;
-      // Tandai bahwa onboundary bekerja
       this._boundaryFired = true;
       this._stopWatchdog();
       this._stopFallback();
 
-      const absoluteIndex = offset + (e.charIndex || 0);
-      this._lastAbsoluteIndex = absoluteIndex;
+      // Cumulative offset mapping
+      const absoluteIndex = chunk.startIndex + (e.charIndex || 0);
       this._highlightWordAt(absoluteIndex);
     };
 
     utt.onend = () => {
       this._stopWatchdog();
       this._stopFallback();
-      this._endSpeak();
+      if (this.isStopped) return;
+
+      const nextIndex = index + 1;
+      if (nextIndex >= this.chunks.length) {
+        this._endSpeak();
+        return;
+      }
+
+      // Dynamic pause setelah tanda baca
+      const extraPause = Math.round(chunk.pauseAfterMs * this.pauseMultiplier);
+      if (extraPause > 0) {
+        setTimeout(() => this._speakChunk(nextIndex), extraPause);
+      } else {
+        this._speakChunk(nextIndex);
+      }
     };
 
     utt.onerror = (e) => {
       if (e.error === 'interrupted' || e.error === 'canceled') return;
-      console.error('Speech error:', e);
+      console.error('[Narrator] Speech error:', e);
       this._stopWatchdog();
       this._stopFallback();
       this.isPlaying = false;
@@ -137,28 +272,27 @@ export class Narrator {
     };
 
     this.utterance = utt;
-    setTimeout(() => {
-      try { this.synth.speak(utt); } catch (err) { console.error(err); }
-    }, 50);
+    try { this.synth.speak(utt); }
+    catch (err) { console.error('[Narrator] speak error:', err); }
   }
 
   _endSpeak() {
     this.isPlaying = false;
     this.isPaused = false;
+    this.isStopped = true;
     this._clearHighlight();
     this.onStateChange?.('ended');
     this.onEnd?.();
   }
 
-  // ============ Fallback timing ============
+  // ============ Watchdog → Fallback per-chunk ============
   _startWatchdog() {
     this._stopWatchdog();
     this._watchdogTimer = setTimeout(() => {
-      // Kalau onboundary tidak fire dalam 900ms, aktifkan fallback
       if (!this._boundaryFired && this.isPlaying) {
-        this._startFallback();
+        this._startFallbackForChunk(this.activeChunkIndex);
       }
-    }, 900);
+    }, WATCHDOG_MS);
   }
 
   _stopWatchdog() {
@@ -168,30 +302,38 @@ export class Narrator {
     }
   }
 
-  _startFallback() {
+  _startFallbackForChunk(chunkIndex) {
     this._usingFallback = true;
-    console.info('[Narrator] onboundary tidak didukung — memakai fallback timer.');
 
-    const total = this.wordSpans.length;
-    if (total === 0) return;
+    const chunk = this.chunks[chunkIndex];
+    if (!chunk) return;
 
-    // Estimasi WPM untuk speech synthesis default ≈ 175 WPM di rate=1
-    // 175 kata/menit → 343ms per kata di rate=1
-    // Disesuaikan dengan rate: lebih cepat → lebih pendek jeda
-    const msPerWord = Math.max(150, Math.round(343 / this.rate));
+    // Filter spans dalam chunk ini (cumulative offset)
+    const chunkWords = this.wordSpans.filter(span => {
+      const s = Number(span.dataset.start);
+      return s >= chunk.startIndex && s < chunk.endIndex;
+    });
+    if (!chunkWords.length) return;
 
+    // Estimasi ms per kata: 175 WPM di rate=1
+    const msPerWord = Math.max(140, Math.round((60000 / FALLBACK_WPM) / this.rate));
+
+    // Mulai dari kata pertama dalam chunk yang belum dibaca
+    let startIdx = 0;
+    if (this.activeSpan) {
+      const aStart = Number(this.activeSpan.dataset.start);
+      const idx = chunkWords.findIndex(w => Number(w.dataset.start) === aStart);
+      if (idx >= 0) startIdx = idx + 1;
+    }
+
+    let i = startIdx;
     const advance = () => {
-      if (!this.isPlaying) return;
-      if (this._currentFallbackIndex >= total) return;
-
-      const span = this.wordSpans[this._currentFallbackIndex];
-      this._setActiveSpan(span, true);
-      this._currentFallbackIndex++;
-
+      if (this.isStopped || !this.isPlaying) return;
+      if (i >= chunkWords.length) return;
+      this._setActiveSpan(chunkWords[i]);
+      i++;
       this._fallbackTimer = setTimeout(advance, msPerWord);
     };
-
-    // Mulai dari awal (atau dari posisi terakhir)
     advance();
   }
 
@@ -216,10 +358,7 @@ export class Narrator {
         if (Number(span.dataset.start) >= charIndex) { target = span; break; }
       }
     }
-    if (target) {
-      this._currentFallbackIndex = this.wordSpans.indexOf(target) + 1;
-      this._setActiveSpan(target);
-    }
+    if (target) this._setActiveSpan(target);
   }
 
   _setActiveSpan(span) {
@@ -229,23 +368,20 @@ export class Narrator {
     span.classList.add('active');
     this.activeSpan = span;
 
-    // Auto-scroll ke tengah container
     this._scrollIntoView(span);
 
-    // Notify progress
     const idx = this.wordSpans.indexOf(span);
     this.onProgress?.(idx + 1, this.wordSpans.length);
     this.onWordChange?.(span.textContent, idx);
   }
 
   _scrollIntoView(span) {
-    // Cari parent yang scrollable
     let parent = span.parentElement;
     let scrollParent = null;
     while (parent) {
       const style = window.getComputedStyle(parent);
-      const overflowY = style.overflowY;
-      if ((overflowY === 'auto' || overflowY === 'scroll') && parent.scrollHeight > parent.clientHeight) {
+      const oy = style.overflowY;
+      if ((oy === 'auto' || oy === 'scroll') && parent.scrollHeight > parent.clientHeight) {
         scrollParent = parent;
         break;
       }
@@ -256,15 +392,12 @@ export class Narrator {
     try {
       const spanRect = span.getBoundingClientRect();
       const parentRect = scrollParent.getBoundingClientRect();
+      if (spanRect.top >= parentRect.top && spanRect.bottom <= parentRect.bottom) return;
       const targetScroll =
         scrollParent.scrollTop +
         (spanRect.top - parentRect.top) -
         (parentRect.height / 2 - spanRect.height / 2);
-
-      scrollParent.scrollTo({
-        top: Math.max(0, targetScroll),
-        behavior: 'smooth'
-      });
+      scrollParent.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
     } catch (e) { /* ignore */ }
   }
 
@@ -273,9 +406,7 @@ export class Narrator {
       this.activeSpan.classList.remove('active');
       this.activeSpan = null;
     }
-    // Bersihkan status "read"
     this.wordSpans.forEach(s => s.classList.remove('read'));
-    this._currentFallbackIndex = 0;
   }
 
   // ============ Kontrol ============
@@ -293,28 +424,14 @@ export class Narrator {
       this.synth.resume();
       this.isPaused = false;
       this.onStateChange?.('playing');
-
-      // Restart fallback kalau sebelumnya pakai fallback
-      if (this._usingFallback) {
-        // Lanjut dari kata terakhir
-        const total = this.wordSpans.length;
-        const msPerWord = Math.max(150, Math.round(343 / this.rate));
-        const advance = () => {
-          if (!this.isPlaying) return;
-          if (this._currentFallbackIndex >= total) return;
-          const span = this.wordSpans[this._currentFallbackIndex];
-          this._setActiveSpan(span);
-          this._currentFallbackIndex++;
-          this._fallbackTimer = setTimeout(advance, msPerWord);
-        };
-        advance();
-      } else {
-        // Kalau browser dukung onboundary, biarkan lanjut sendiri
-      }
+      // Fallback akan restart otomatis via watchdog kalau perlu
+      this._boundaryFired = false;
+      this._startWatchdog();
     }
   }
 
   stop() {
+    this.isStopped = true;
     try { this.synth.cancel(); } catch (e) {}
     this._stopWatchdog();
     this._stopFallback();
@@ -324,45 +441,86 @@ export class Narrator {
     this.onStateChange?.('stopped');
   }
 
-  setRate(newRate) {
-    const clamped = Math.max(0.5, Math.min(2, Number(newRate) || 1));
-    const prev = this.rate;
-    this.rate = clamped;
+  setRate(v) {
+    const c = Math.max(0.5, Math.min(2, Number(v) || 1));
+    if (c === this.rate) return;
+    this.rate = c;
+    this._restartFromLastWord();
+  }
 
+  setPitch(v) {
+    const c = Math.max(0.5, Math.min(2, Number(v) || 1));
+    if (c === this.pitch) return;
+    this.pitch = c;
+    this._restartFromLastWord();
+  }
+
+  setVolume(v) {
+    const c = Math.max(0, Math.min(1, Number(v) || 0));
+    this.volume = c; // berlaku untuk chunk berikutnya, tidak perlu restart
+  }
+
+  setPauseMultiplier(v) {
+    this.pauseMultiplier = Math.max(0, Math.min(2, Number(v) || 0));
+    // Berlaku untuk jeda antar-chunk berikutnya
+  }
+
+  setVoice(voice) {
+    if (voice === this.voice) return;
+    this.voice = voice;
+    this._restartFromLastWord();
+  }
+
+  _restartFromLastWord() {
     if (!this.isPlaying && !this.isPaused) return;
-    if (clamped === prev) return;
+    const lastSpan = this.activeSpan;
+    if (!lastSpan) return;
 
-    // Restart dari kata terakhir
-    const restartFrom = this.activeSpan
-      ? Number(this.activeSpan.dataset.start)
-      : this._lastAbsoluteIndex;
+    const restartFrom = Number(lastSpan.dataset.start);
+    this.isStopped = true;
+    try { this.synth.cancel(); } catch (e) {}
+    this._stopWatchdog();
+    this._stopFallback();
 
-    this._clearHighlight();
-    this.synth.cancel();
     setTimeout(() => {
-      this._boundaryFired = false;
-      this._currentFallbackIndex = 0;
-      this._speakRange(restartFrom);
-    }, 80);
+      this.isStopped = false;
+      this.isPlaying = false;
+      this.chunks = chunkText(this._originalText);
+      // Cari chunk yang mencakup restartFrom
+      let idx = 0;
+      for (let i = 0; i < this.chunks.length; i++) {
+        const c = this.chunks[i];
+        if (restartFrom >= c.startIndex && restartFrom < c.endIndex) {
+          idx = i; break;
+        }
+      }
+      this.activeChunkIndex = idx;
+      this._speakChunk(idx);
+    }, 120);
+  }
+
+  // ============ Voice ============
+  getVoices() { return this.synth.getVoices() || []; }
+
+  getVoicesForLang(langCode) {
+    const all = this.getVoices();
+    const prefix = String(langCode || 'id').split('-')[0].toLowerCase();
+    return all.filter(v => String(v.lang || '').toLowerCase().startsWith(prefix));
   }
 
   pickBestVoice(langCode) {
-    const voices = this.synth.getVoices();
-    if (!voices || !voices.length) return null;
-    const prefix = String(langCode || 'id').split('-')[0].toLowerCase();
-    const matches = voices.filter(v => String(v.lang || '').toLowerCase().startsWith(prefix));
-    if (!matches.length) return null;
-    return matches.find(v => v.default) || matches[0];
+    const m = this.getVoicesForLang(langCode);
+    if (!m.length) return null;
+    return m.find(v => v.default) || m[0];
   }
 
-  getVoices() {
-    return this.synth.getVoices() || [];
+  destroy() {
+    this.stop();
+    document.removeEventListener('visibilitychange', this._onVisibilityChange);
   }
 }
 
-/**
- * Tunggu voices siap
- */
+// =====================================================
 export function waitForVoices(timeoutMs = 3000) {
   return new Promise(resolve => {
     if (!Narrator.isSupported()) return resolve([]);
@@ -389,35 +547,13 @@ export function waitForVoices(timeoutMs = 3000) {
   });
 }
 
-/**
- * Map kode bahasa ke tag BCP-47
- */
 export const SPEECH_LANG = {
-  id: 'id-ID',
-  en: 'en-US',
-  ms: 'ms-MY',
-  zh: 'zh-CN',
-  ja: 'ja-JP',
-  ko: 'ko-KR',
-  hi: 'hi-IN',
-  th: 'th-TH',
-  tl: 'fil-PH',
-  my: 'my-MM',
-  vi: 'vi-VN',
-  ru: 'ru-RU',
-  ar: 'ar-SA',
-  es: 'es-ES',
-  fr: 'fr-FR',
-  de: 'de-DE',
-  pt: 'pt-PT',
-  it: 'it-IT',
-  nl: 'nl-NL',
-  tr: 'tr-TR'
+  id: 'id-ID', en: 'en-US', ms: 'ms-MY', zh: 'zh-CN', ja: 'ja-JP',
+  ko: 'ko-KR', hi: 'hi-IN', th: 'th-TH', tl: 'fil-PH', my: 'my-MM',
+  vi: 'vi-VN', ru: 'ru-RU', ar: 'ar-SA', es: 'es-ES', fr: 'fr-FR',
+  de: 'de-DE', pt: 'pt-PT', it: 'it-IT', nl: 'nl-NL', tr: 'tr-TR'
 };
 
-/**
- * Daftar bahasa untuk dropdown translate
- */
 export const TRANSLATE_LANGS = [
   { code: 'en', flag: '🇬🇧', native: 'English',        promptName: 'English' },
   { code: 'ms', flag: '🇲🇾', native: 'Bahasa Melayu',  promptName: 'Malay' },
