@@ -607,7 +607,7 @@ registerRoute('#/notes/:id', (params, view) => {
   function updateKaraokeContent() {
     const karaokeEl = bodyEl.querySelector('#karaoke-content');
     if (!karaokeEl) return;
-    narrator.renderWords(currentDisplayText, karaokeEl);
+    narrator.renderWords(currentDisplayText, karaokeEl, currentLang);
   }
 
   function setupNarratorControls() {

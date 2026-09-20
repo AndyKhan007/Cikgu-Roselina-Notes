@@ -396,7 +396,7 @@ export function mountSlideViewer(params, view) {
     viewerEl.querySelector('#slide-title').textContent = note.title || t('Tanpa judul');
 
     const karaokeEl = viewerEl.querySelector('#slide-karaoke');
-    narrator.renderWords(text, karaokeEl);
+    narrator.renderWords(text, karaokeEl, selectedLang);
 
     const pct = ((currentIndex + 1) / group.items.length) * 100;
     viewerEl.querySelector('#slide-progress').style.width = pct + '%';
