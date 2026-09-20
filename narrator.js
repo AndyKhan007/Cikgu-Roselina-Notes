@@ -1,38 +1,31 @@
 // =====================================================
-// Narrator v3 — Punctuation-Aware Chunking
-// Teknik adaptasi dari Android README:
-//   1. Intelligent Text Splitting per tanda baca
-//   2. Cumulative Offset Mapping (startIndex per chunk)
-//   3. Dynamic pause setelah tanda baca (user-controllable)
-//   4. Per-chunk fallback timer (kalau onboundary gagal)
+// Narrator v4 — onboundary First, Fallback Last
+// Perbaikan:
+//   - Watchdog 2000ms (beri onboundary waktu fire)
+//   - Sekali onboundary fire → kunci mode onboundary untuk sesi
+//   - Fallback verifikasi chunk index sebelum highlight
+//   - Log jelas ke Console untuk diagnosa
 // =====================================================
 
 const MAX_CHUNK_LEN = 180;
 const MIN_CHUNK_LEN = 20;
-const WATCHDOG_MS = 900;
+const WATCHDOG_MS = 2000;      // dinaikkan dari 900ms
 const FALLBACK_WPM = 175;
 
-// Delay dasar setelah tanda baca (ms, sebelum dikali multiplier)
 const BASE_PAUSE = {
   newline: 400,
-  sentence: 350,  // . ! ?
-  clause: 180     // , ; :
+  sentence: 350,
+  clause: 180
 };
 
-/**
- * Chunking berbasis tanda baca + cumulative offset mapping.
- * Setiap chunk: { text, startIndex, endIndex, pauseAfterMs, pauseType }
- */
 function chunkText(text, maxLen = MAX_CHUNK_LEN) {
   const chunks = [];
   let pos = 0;
 
   while (pos < text.length) {
-    // Skip leading whitespace
     while (pos < text.length && /\s/.test(text[pos])) pos++;
     if (pos >= text.length) break;
 
-    // Kalau sisa muat satu chunk, ambil semua
     if (text.length - pos <= maxLen) {
       chunks.push({
         text: text.substring(pos),
@@ -49,7 +42,6 @@ function chunkText(text, maxLen = MAX_CHUNK_LEN) {
     let pauseMs = 0;
     let pauseType = 'none';
 
-    // Scan untuk split point terbaik
     for (let i = pos + MIN_CHUNK_LEN; i < maxEnd; i++) {
       const c = text[i];
       const after = text[i + 1];
@@ -59,14 +51,13 @@ function chunkText(text, maxLen = MAX_CHUNK_LEN) {
         splitAt = i + 1;
         pauseMs = BASE_PAUSE.newline;
         pauseType = 'newline';
-        break; // prioritas tertinggi
+        break;
       } else if ((c === '.' || c === '!' || c === '?') && afterOK) {
         splitAt = i + 1;
         pauseMs = BASE_PAUSE.sentence;
         pauseType = 'sentence';
-        break; // prioritas tinggi
+        break;
       } else if ((c === ',' || c === ';' || c === ':') && afterOK) {
-        // Simpan sebagai kandidat, tapi lanjut scan (mungkin ada titik setelahnya)
         if (splitAt === -1) {
           splitAt = i + 1;
           pauseMs = BASE_PAUSE.clause;
@@ -79,7 +70,6 @@ function chunkText(text, maxLen = MAX_CHUNK_LEN) {
     if (splitAt > 0) {
       end = splitAt;
     } else {
-      // Tidak ada tanda baca → potong di batas kata terdekat
       end = maxEnd;
       while (end < text.length && !/\s/.test(text[end])) end++;
       pauseMs = 0;
@@ -109,33 +99,31 @@ export class Narrator {
     this.isPaused = false;
     this.isStopped = true;
 
-    // Audio
     this.rate = 1;
     this.pitch = 1;
     this.volume = 1;
-    this.pauseMultiplier = 1; // 0 = tanpa jeda tambahan
+    this.pauseMultiplier = 1;
     this.lang = 'id-ID';
     this.voice = null;
 
-    // Chunking
     this._originalText = '';
     this.chunks = [];
     this.activeChunkIndex = -1;
 
-    // Fallback per-chunk
-    this._boundaryFired = false;
+    // Mode tracking
+    this._boundaryWorks = null;   // null = belum tahu, true = onboundary OK, false = tidak support
+    this._boundaryFired = false;  // untuk chunk saat ini
     this._watchdogTimer = null;
     this._fallbackTimer = null;
+    this._fallbackChunkIndex = -1;  // chunk yang fallback sedang aktif
     this._usingFallback = false;
 
-    // Callbacks
     this.onStateChange = null;
     this.onWordChange = null;
     this.onEnd = null;
     this.onProgress = null;
     this.onChunkChange = null;
 
-    // Auto-pause on hidden
     this.autoPauseOnHidden = true;
     this._onVisibilityChange = () => {
       if (!this.autoPauseOnHidden) return;
@@ -148,7 +136,6 @@ export class Narrator {
     return typeof window !== 'undefined' && 'speechSynthesis' in window;
   }
 
-  // ============ Render kata ============
   renderWords(text, container) {
     container.innerHTML = '';
     this.wordSpans = [];
@@ -174,7 +161,6 @@ export class Narrator {
     }
   }
 
-  // ============ Speak ============
   speak(text, { lang = 'id-ID', rate = 1, pitch = 1, volume = 1, voice = null, pauseMultiplier = 1 } = {}) {
     if (!Narrator.isSupported()) return;
     this.stop();
@@ -188,11 +174,14 @@ export class Narrator {
     this.voice = voice;
     this.isStopped = false;
 
+    // Reset mode — akan dideteksi ulang per sesi
+    this._boundaryWorks = null;
+
     this.chunks = chunkText(text);
     if (!this.chunks.length) return;
 
     this.activeChunkIndex = 0;
-    console.info(`[Narrator] ${this.chunks.length} chunk (punctuation-aware).`);
+    console.info(`[Narrator] Mulai: ${this.chunks.length} chunk. Menunggu onboundary...`);
 
     setTimeout(() => this._speakChunk(0), 80);
   }
@@ -204,13 +193,15 @@ export class Narrator {
       return;
     }
 
+    // Bersihkan fallback dari chunk sebelumnya
+    this._stopFallback();
+
     const prevIdx = this.activeChunkIndex;
     this.activeChunkIndex = index;
     const chunk = this.chunks[index];
 
     if (prevIdx !== index) this.onChunkChange?.(index, this.chunks.length);
 
-    // Reset status boundary per chunk
     this._boundaryFired = false;
 
     const utt = new SpeechSynthesisUtterance(chunk.text);
@@ -231,11 +222,17 @@ export class Narrator {
 
     utt.onboundary = (e) => {
       if (e.name && e.name !== 'word') return;
+
+      // --- KUNCI: sekali onboundary fire, kita tahu browser support ---
+      if (this._boundaryWorks !== true) {
+        this._boundaryWorks = true;
+        console.info('[Narrator] onboundary AKTIF — pakai mode sinkron murni.');
+      }
+
       this._boundaryFired = true;
       this._stopWatchdog();
-      this._stopFallback();
+      this._stopFallback();  // matikan fallback segera
 
-      // Cumulative offset mapping
       const absoluteIndex = chunk.startIndex + (e.charIndex || 0);
       this._highlightWordAt(absoluteIndex);
     };
@@ -251,7 +248,6 @@ export class Narrator {
         return;
       }
 
-      // Dynamic pause setelah tanda baca
       const extraPause = Math.round(chunk.pauseAfterMs * this.pauseMultiplier);
       if (extraPause > 0) {
         setTimeout(() => this._speakChunk(nextIndex), extraPause);
@@ -285,13 +281,31 @@ export class Narrator {
     this.onEnd?.();
   }
 
-  // ============ Watchdog → Fallback per-chunk ============
+  // ============ Watchdog ============
   _startWatchdog() {
     this._stopWatchdog();
+
+    // Kalau kita sudah tahu browser TIDAK support onboundary → langsung fallback
+    if (this._boundaryWorks === false) {
+      this._startFallbackForChunk(this.activeChunkIndex);
+      return;
+    }
+
+    // Kalau kita sudah tahu browser support onboundary → jangan fallback
+    if (this._boundaryWorks === true) {
+      return;
+    }
+
+    // Belum tahu — beri waktu 2000ms
     this._watchdogTimer = setTimeout(() => {
-      if (!this._boundaryFired && this.isPlaying) {
-        this._startFallbackForChunk(this.activeChunkIndex);
-      }
+      if (this._boundaryFired) return;      // sudah fire, aman
+      if (!this.isPlaying) return;          // sudah berhenti
+      if (this._boundaryWorks === true) return;
+
+      // Timeout — tandai browser tidak support
+      this._boundaryWorks = false;
+      console.warn('[Narrator] onboundary TIDAK terdeteksi dalam 2s — fallback aktif (highlight estimasi).');
+      this._startFallbackForChunk(this.activeChunkIndex);
     }, WATCHDOG_MS);
   }
 
@@ -303,22 +317,22 @@ export class Narrator {
   }
 
   _startFallbackForChunk(chunkIndex) {
+    if (this._boundaryWorks === true) return; // jangan fallback kalau onboundary jalan
+
     this._usingFallback = true;
+    this._fallbackChunkIndex = chunkIndex;
 
     const chunk = this.chunks[chunkIndex];
     if (!chunk) return;
 
-    // Filter spans dalam chunk ini (cumulative offset)
     const chunkWords = this.wordSpans.filter(span => {
       const s = Number(span.dataset.start);
       return s >= chunk.startIndex && s < chunk.endIndex;
     });
     if (!chunkWords.length) return;
 
-    // Estimasi ms per kata: 175 WPM di rate=1
     const msPerWord = Math.max(140, Math.round((60000 / FALLBACK_WPM) / this.rate));
 
-    // Mulai dari kata pertama dalam chunk yang belum dibaca
     let startIdx = 0;
     if (this.activeSpan) {
       const aStart = Number(this.activeSpan.dataset.start);
@@ -328,8 +342,12 @@ export class Narrator {
 
     let i = startIdx;
     const advance = () => {
+      // Verifikasi: masih chunk yang sama? masih playing? masih fallback mode?
       if (this.isStopped || !this.isPlaying) return;
+      if (this._boundaryWorks === true) return;               // onboundary menyala → stop
+      if (this._fallbackChunkIndex !== chunkIndex) return;    // chunk sudah ganti
       if (i >= chunkWords.length) return;
+
       this._setActiveSpan(chunkWords[i]);
       i++;
       this._fallbackTimer = setTimeout(advance, msPerWord);
@@ -343,6 +361,7 @@ export class Narrator {
       this._fallbackTimer = null;
     }
     this._usingFallback = false;
+    this._fallbackChunkIndex = -1;
   }
 
   // ============ Highlight ============
@@ -424,7 +443,6 @@ export class Narrator {
       this.synth.resume();
       this.isPaused = false;
       this.onStateChange?.('playing');
-      // Fallback akan restart otomatis via watchdog kalau perlu
       this._boundaryFired = false;
       this._startWatchdog();
     }
@@ -457,12 +475,11 @@ export class Narrator {
 
   setVolume(v) {
     const c = Math.max(0, Math.min(1, Number(v) || 0));
-    this.volume = c; // berlaku untuk chunk berikutnya, tidak perlu restart
+    this.volume = c;
   }
 
   setPauseMultiplier(v) {
     this.pauseMultiplier = Math.max(0, Math.min(2, Number(v) || 0));
-    // Berlaku untuk jeda antar-chunk berikutnya
   }
 
   setVoice(voice) {
@@ -486,7 +503,6 @@ export class Narrator {
       this.isStopped = false;
       this.isPlaying = false;
       this.chunks = chunkText(this._originalText);
-      // Cari chunk yang mencakup restartFrom
       let idx = 0;
       for (let i = 0; i < this.chunks.length; i++) {
         const c = this.chunks[i];
@@ -499,7 +515,6 @@ export class Narrator {
     }, 120);
   }
 
-  // ============ Voice ============
   getVoices() { return this.synth.getVoices() || []; }
 
   getVoicesForLang(langCode) {
